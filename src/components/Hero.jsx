@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 
 export default function Hero() {
   return (
@@ -23,15 +24,15 @@ export default function Hero() {
             Stop guessing. Follow proven, community-vetted career roadmaps, discover fields that match your interests, and get guided by world-class mentors.
           </p>
           <div className="mt-10 flex items-center justify-center gap-x-6">
-            <a
-              href="#get-started"
+            <Link
+              href="/#get-started"
               className="rounded-lg bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 active:bg-indigo-700 transition-all duration-200 dark:bg-indigo-500 dark:hover:bg-indigo-400"
             >
               Get Started
-            </a>
-            <a href="#explore" className="text-sm font-semibold leading-6 text-zinc-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+            </Link>
+            <Link href="/explore" className="text-sm font-semibold leading-6 text-zinc-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
               Explore Fields <span aria-hidden="true">→</span>
-            </a>
+            </Link>
           </div>
         </div>
       </div>

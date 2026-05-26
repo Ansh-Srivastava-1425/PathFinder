@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 
 export default function StudentStories() {
   const testimonials = [
@@ -81,12 +82,12 @@ export default function StudentStories() {
           </p>
           
           <div className="relative mt-10 flex flex-col sm:flex-row items-center justify-center gap-6 z-10">
-            <a
-              href="#explore"
+            <Link
+              href="/explore"
               className="w-full sm:w-auto inline-flex h-12 items-center justify-center rounded-lg bg-indigo-600 px-6 text-sm font-semibold text-white shadow-md hover:bg-indigo-500 active:bg-indigo-700 transition-all duration-200 dark:bg-indigo-500 dark:hover:bg-indigo-400"
             >
               Find my field
-            </a>
+            </Link>
             <a 
               href="#signin" 
               className="text-sm font-semibold text-zinc-300 hover:text-white transition-colors py-2"

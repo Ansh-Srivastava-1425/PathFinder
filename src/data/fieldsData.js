@@ -1,4 +1,4 @@
-// Central data repository for Pathfinder's tech fields detail view.
+// Central data repository for Dishant's tech fields detail view.
 // Contains realistic data tailored for Indian engineering students.
 
 export const fieldsData = {

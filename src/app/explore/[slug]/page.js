@@ -14,11 +14,11 @@ export async function generateMetadata({ params }) {
   const field = fieldsData[slug];
   if (!field) {
     return {
-      title: "Field Not Found - Pathfinder",
+      title: "Field Not Found - Dishant",
     };
   }
   return {
-    title: `${field.name} Roadmap & Career Guide - Pathfinder`,
+    title: `${field.name} Roadmap & Career Guide - Dishant`,
     description: `Explore the ${field.name} career path in India. Salary range: ${field.stats.entrySalary} to ${field.stats.seniorSalary}. Discover skills, projects, companies, and guidance.`,
   };
 }

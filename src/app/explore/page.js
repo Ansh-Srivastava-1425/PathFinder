@@ -4,7 +4,7 @@ import PageHeader from "@/components/PageHeader";
 import ExploreClient from "@/components/ExploreClient";
 
 export const metadata = {
-  title: "Explore Fields - Pathfinder",
+  title: "Explore Fields - Dishant",
   description: "Explore diverse domains, compare popular careers against hidden gems, and plan your journey.",
 };
 

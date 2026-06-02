@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Dishant - Navigation System",
-  description: "Find your path, explore fields, and connect with mentors.",
+  title: "PathFinder — Find your field. Own your future.",
+  description: "PathFinder is an AI-powered career guidance platform for Indian students. Discover the right tech field, get a personalised roadmap, and never waste years going in the wrong direction.",
 };
 
 export default function RootLayout({ children }) {

@@ -1,10 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { fieldsData } from "@/data/fieldsData";
+import { createClient } from "@/lib/supabase/client";
 
-export default function DashboardClient({ user }) {
+export default function DashboardClient({ user, userId }) {
   // Extract user details
   const firstName = user?.full_name ? user.full_name.trim().split(/\s+/)[0] : "student";
   const chosenFieldId = user?.chosen_field_id;
@@ -42,6 +43,88 @@ export default function DashboardClient({ user }) {
 
   const totalWeeks = calculateTotalWeeks();
 
+  const [progressData, setProgressData] = useState([]);
+
+  useEffect(() => {
+    if (!userId || !chosenFieldId) return;
+
+    const fetchProgress = async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("user_progress")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("field_slug", chosenFieldId);
+
+      if (!error && data) {
+        setProgressData(data);
+      } else {
+        console.error("Error fetching progress:", error);
+      }
+    };
+
+    fetchProgress();
+  }, [userId, chosenFieldId]);
+
+  // Derived progress metrics
+  const totalRoadmapSteps = field?.roadmap?.length || 0;
+  const completedSteps = progressData.filter((row) => row.status === "completed").length;
+  const progressPercent = totalRoadmapSteps > 0 ? Math.round((completedSteps / totalRoadmapSteps) * 100) : 0;
+  const derivedTimeLeft = Math.round(totalWeeks * (1 - progressPercent / 100));
+  const badgesCount = Math.min(4, Math.floor(progressPercent / 25));
+
+  const streakData = useMemo(() => {
+    const completedDates = progressData
+      .filter(row => row.completed_at)
+      .map(row => new Date(row.completed_at).toISOString().split("T")[0]);
+    const uniqueDates = [...new Set(completedDates)].sort((a, b) => new Date(b) - new Date(a));
+    
+    let currentStreak = 0;
+    let bestStreak = 0;
+
+    const todayStr = new Date().toISOString().split("T")[0];
+    let tempCurrentStreak = 0;
+    let checkDate = new Date();
+    
+    while (true) {
+      const dStr = checkDate.toISOString().split("T")[0];
+      if (uniqueDates.includes(dStr)) {
+        tempCurrentStreak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else if (dStr === todayStr) {
+        checkDate.setDate(checkDate.getDate() - 1);
+        const yStr = checkDate.toISOString().split("T")[0];
+        if (uniqueDates.includes(yStr)) {
+          tempCurrentStreak++;
+          checkDate.setDate(checkDate.getDate() - 1);
+        } else {
+          break;
+        }
+      } else {
+        break;
+      }
+    }
+    currentStreak = tempCurrentStreak;
+
+    if (uniqueDates.length > 0) {
+      let maxStrk = 1;
+      let currStrk = 1;
+      for (let i = 0; i < uniqueDates.length - 1; i++) {
+        const d1 = new Date(uniqueDates[i]);
+        const d2 = new Date(uniqueDates[i+1]);
+        const diffDays = Math.ceil(Math.abs(d1 - d2) / (1000 * 60 * 60 * 24));
+        if (diffDays === 1) {
+          currStrk++;
+          if (currStrk > maxStrk) maxStrk = currStrk;
+        } else {
+          currStrk = 1;
+        }
+      }
+      bestStreak = maxStrk;
+    }
+    return { currentStreak, bestStreak, uniqueDates };
+  }, [progressData]);
+
   // Weekly streak days setup (Mon - Sun)
   const streakDays = [
     { label: "M", value: 1, name: "Monday" },
@@ -53,9 +136,25 @@ export default function DashboardClient({ user }) {
     { label: "S", value: 0, name: "Sunday" },
   ];
 
-  // Hardcode first 4 days as active (Mon - Thu)
-  const activeDayValues = [1, 2, 3, 4];
   const currentDayOfWeek = new Date().getDay();
+
+  const activeDayValues = useMemo(() => {
+    const now = new Date();
+    const day = now.getDay();
+    const diffToMonday = day === 0 ? -6 : 1 - day;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + diffToMonday);
+    
+    const weekDates = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      weekDates.push({ value: d.getDay(), dateStr: d.toISOString().split("T")[0] });
+    }
+    return weekDates
+      .filter(w => streakData.uniqueDates.includes(w.dateStr))
+      .map(w => w.value);
+  }, [streakData.uniqueDates]);
 
   // AI Advisor dynamic prompt helper
   const getAiAdvisorPrompt = () => {
@@ -98,12 +197,11 @@ export default function DashboardClient({ user }) {
             <span className="text-[10px] font-bold tracking-wider uppercase text-zinc-400 dark:text-zinc-500 block">
               Progress
             </span>
-            {/* TODO: replace with real progress from user_progress table */}
             <span className="text-2xl font-extrabold text-zinc-950 dark:text-white mt-1 block">
-              0%
+              {progressPercent}%
             </span>
             <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 block mt-1">
-              0 of {field?.roadmap?.length || 0} steps done
+              {completedSteps} of {totalRoadmapSteps} steps done
             </span>
           </div>
 
@@ -112,12 +210,11 @@ export default function DashboardClient({ user }) {
             <span className="text-[10px] font-bold tracking-wider uppercase text-zinc-400 dark:text-zinc-500 block">
               Streak
             </span>
-            {/* TODO: replace with real streak from user_activity table */}
             <span className="text-2xl font-extrabold text-zinc-950 dark:text-white mt-1 block">
-              0 days
+              {streakData.currentStreak} days
             </span>
             <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 block mt-1">
-              Best: 0 days
+              Best: {streakData.bestStreak} days
             </span>
           </div>
 
@@ -126,9 +223,8 @@ export default function DashboardClient({ user }) {
             <span className="text-[10px] font-bold tracking-wider uppercase text-zinc-400 dark:text-zinc-500 block">
               Time Left
             </span>
-            {/* TODO: calculate based on progress percentage and total estimated weeks for the field */}
             <span className="text-2xl font-extrabold text-zinc-950 dark:text-white mt-1 block">
-              ~{field ? totalWeeks : 0} wks
+              ~{field ? derivedTimeLeft : 0} wks
             </span>
             <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 block mt-1">
               Estimated path duration
@@ -140,9 +236,8 @@ export default function DashboardClient({ user }) {
             <span className="text-[10px] font-bold tracking-wider uppercase text-zinc-400 dark:text-zinc-500 block">
               Badges
             </span>
-            {/* TODO: replace with real badges count */}
             <span className="text-2xl font-extrabold text-zinc-950 dark:text-white mt-1 block">
-              0
+              {badgesCount}
             </span>
             <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 block mt-1">
               Milestones earned
@@ -168,8 +263,7 @@ export default function DashboardClient({ user }) {
             {/* Horizontal progress bar */}
             <div className="space-y-2">
               <div className="relative h-2.5 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-                {/* 0% progress fill for now */}
-                <div className="absolute top-0 left-0 h-full bg-indigo-600 dark:bg-indigo-500 rounded-full transition-all duration-300" style={{ width: "0%" }} />
+                <div className="absolute top-0 left-0 h-full bg-indigo-600 dark:bg-indigo-500 rounded-full transition-all duration-300" style={{ width: `${progressPercent}%` }} />
               </div>
               
               {/* Milestones labels */}
@@ -217,10 +311,11 @@ export default function DashboardClient({ user }) {
 
             <div className="space-y-3">
               {field.roadmap.slice(0, 5).map((stepItem, index) => {
-                const isStep1 = index === 0;
-                // TODO: replace with real data from user_progress table later
-                const isCompleted = false;
-                const isInProgress = isStep1;
+                const rowId = stepItem.id || stepItem.name;
+                const stepRow = progressData.find(row => row.roadmap_step_id === rowId);
+
+                const isCompleted = stepRow?.status === "completed";
+                const isInProgress = stepRow?.status === "in_progress";
                 const isLocked = !isCompleted && !isInProgress;
 
                 // Est weeks for current
@@ -295,7 +390,6 @@ export default function DashboardClient({ user }) {
 
           <div className="flex items-center justify-between gap-2 max-w-sm">
             {streakDays.map((day) => {
-              // TODO: replace with real activity data later
               const isActive = activeDayValues.includes(day.value);
               const isToday = day.value === currentDayOfWeek;
 

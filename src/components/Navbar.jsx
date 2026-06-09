@@ -17,7 +17,7 @@ export default function Navbar() {
   // Auth States
   const [user, setUser] = useState(null);
   const [userRow, setUserRow] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const isExplore = pathname === "/explore";
 
@@ -27,7 +27,8 @@ export default function Navbar() {
     // Fetch initial user session
     const fetchUser = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
+        const user = session?.user ?? null;
         setUser(user);
         if (user) {
           const { data } = await supabase
@@ -73,18 +74,16 @@ export default function Navbar() {
 
   // Handle click outside to close dropdowns
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+    const handleClickOutside = (event) => {
+      if (isDropdownOpen && dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
       }
-      if (mobileDropdownRef.current && !mobileDropdownRef.current.contains(event.target)) {
+      if (isMobileDropdownOpen && mobileDropdownRef.current && !mobileDropdownRef.current.contains(event.target)) {
         setIsMobileDropdownOpen(false);
       }
-    }
+    };
 
-    if (isDropdownOpen || isMobileDropdownOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
@@ -104,23 +103,18 @@ export default function Navbar() {
     return "?";
   };
 
-  const handleLogout = async (e) => {
-    e.stopPropagation();
+  const handleLogout = async () => {
     setIsDropdownOpen(false);
     setIsMobileDropdownOpen(false);
     setIsOpen(false);
     await logout();
   };
 
-  const handleDesktopToggle = (e) => {
-    e.stopPropagation();
-    console.log("Desktop avatar click detected. Current state:", isDropdownOpen, "New state:", !isDropdownOpen);
+  const handleDesktopToggle = () => {
     setIsDropdownOpen((prev) => !prev);
   };
 
-  const handleMobileToggle = (e) => {
-    e.stopPropagation();
-    console.log("Mobile avatar click detected. Current state:", isMobileDropdownOpen, "New state:", !isMobileDropdownOpen);
+  const handleMobileToggle = () => {
     setIsMobileDropdownOpen((prev) => !prev);
   };
 
@@ -176,7 +170,6 @@ export default function Navbar() {
 
           {/* Desktop Profile / Signin Actions */}
           <div className="hidden md:flex items-center gap-4">
-            {/* If NOT logged in, show 'Get started' button */}
             {!loading && !user && (
               <Link
                 href="/#get-started"
@@ -186,7 +179,6 @@ export default function Navbar() {
               </Link>
             )}
 
-            {/* Circular trigger button with absolute dropdown underneath */}
             {loading ? (
               <div className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-800/60 animate-pulse border border-zinc-200/50 dark:border-zinc-800/50" />
             ) : (
@@ -261,7 +253,6 @@ export default function Navbar() {
 
           {/* Mobile Menu Button / Actions */}
           <div className="flex md:hidden items-center gap-3">
-            {/* Show avatar or person icon next to hamburger on mobile */}
             {loading ? (
               <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800/60 animate-pulse border border-zinc-200/50 dark:border-zinc-800/50" />
             ) : (
@@ -332,7 +323,7 @@ export default function Navbar() {
                 )}
               </div>
             )}
-            
+
             <button
               onClick={() => setIsOpen(!isOpen)}
               type="button"
@@ -342,25 +333,11 @@ export default function Navbar() {
             >
               <span className="sr-only">Open main menu</span>
               {isOpen ? (
-                <svg
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth="1.5"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               ) : (
-                <svg
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth="1.5"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                 </svg>
               )}
@@ -398,7 +375,7 @@ export default function Navbar() {
             >
               Mentors
             </Link>
-            
+
             <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800">
               {loading ? (
                 <div className="h-10 w-full bg-zinc-100 dark:bg-zinc-800 rounded-lg animate-pulse" />

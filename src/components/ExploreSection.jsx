@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from "react";
+import Link from "next/link";
 
 export default function ExploreSection() {
   const scrollRef = useRef(null);
@@ -10,48 +11,56 @@ export default function ExploreSection() {
     {
       emoji: "🤖",
       title: "Robotics",
+      slug: "robotics",
       status: "Hidden gem",
       description: "Build the hardware and software brains of tomorrow's machines and autonomous systems.",
     },
     {
       emoji: "🔬",
       title: "Bioinformatics",
+      slug: "bioinformatics",
       status: "Hidden gem",
       description: "Combine biology and computer science to decode genomes and accelerate medical breakthroughs.",
     },
     {
       emoji: "👁️",
       title: "Computer Vision",
+      slug: "computer-vision",
       status: "Hidden gem",
       description: "Teach computers to see, understand, and navigate the physical world using deep learning.",
     },
     {
       emoji: "🛰️",
       title: "Space Technology",
+      slug: "space-technology",
       status: "Hidden gem",
       description: "Develop software for orbit analysis, telemetry, rocket engines, and deep-space missions.",
     },
     {
       emoji: "🔒",
       title: "Cybersecurity",
+      slug: "cybersecurity",
       status: "Popular",
       description: "Secure digital infrastructure, defend networks, and hunt vulnerabilities from attackers.",
     },
     {
       emoji: "🌐",
       title: "Web Development",
+      slug: "web-development",
       status: "Popular",
       description: "Build fast, scalable websites and web apps that connect billions of users worldwide.",
     },
     {
       emoji: "⚙️",
       title: "Embedded Systems",
+      slug: "embedded-systems",
       status: "Hidden gem",
       description: "Program microcontrollers, sensors, and hardware that drive smart devices and IoT.",
     },
     {
       emoji: "🧠",
       title: "AI / ML",
+      slug: "ai-machine-learning",
       status: "Popular",
       description: "Train large-scale models, build neural nets, and implement smart automation systems.",
     },
@@ -202,12 +211,12 @@ export default function ExploreSection() {
 
                   {/* CTA link in card */}
                   <div className="mt-6 pt-4 border-t border-zinc-100 dark:border-zinc-800/60">
-                    <a
-                      href={`#roadmaps?field=${encodeURIComponent(field.title.toLowerCase())}`}
+                    <Link
+                      href={`/explore/${field.slug}`}
                       className="inline-flex items-center text-xs font-semibold text-zinc-700 hover:text-indigo-600 dark:text-zinc-300 dark:hover:text-indigo-400 transition-colors"
                     >
                       View roadmap <span className="ml-1 group-hover:translate-x-1 transition-transform">→</span>
-                    </a>
+                    </Link>
                   </div>
                 </div>
               );

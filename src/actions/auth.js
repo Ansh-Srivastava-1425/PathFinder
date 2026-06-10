@@ -15,14 +15,30 @@ export async function login(formData) {
     password: formData.get('password'),
   }
 
-  const { error } = await supabase.auth.signInWithPassword(data)
+  const { data: signInData, error } = await supabase.auth.signInWithPassword(data)
 
   if (error) {
     redirect(`/auth/login?error=${encodeURIComponent(error.message)}`)
   }
 
+  // Determine where to send the user based on their onboarding status
+  const userId = signInData?.user?.id
+  let destination = '/onboarding'
+
+  if (userId) {
+    const { data: profile } = await supabase
+      .from('users')
+      .select('onboarding_complete')
+      .eq('id', userId)
+      .single()
+
+    if (profile?.onboarding_complete === true) {
+      destination = '/dashboard'
+    }
+  }
+
   revalidatePath('/', 'layout')
-  redirect('/')
+  redirect(destination)
 }
 
 export async function signup(formData) {
@@ -57,7 +73,9 @@ export async function signInWithGoogle() {
   const host = headersList.get('x-forwarded-host') || headersList.get('host')
   const protocol = headersList.get('x-forwarded-proto') || 'http'
   
-  const redirectUrl = `${protocol}://${host}/auth/callback`
+  // Pass next=check so the callback route knows to determine the destination
+  // based on the user's onboarding status rather than defaulting to /
+  const redirectUrl = `${protocol}://${host}/auth/callback?next=check`
   
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',

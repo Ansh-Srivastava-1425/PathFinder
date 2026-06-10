@@ -10,7 +10,7 @@ export default function StudentStories() {
       role: "1st year CS, UP",
     },
     {
-      quote: "I am ECE and everyone told me to just do web dev. Dishant showed me the VLSI path and now I know I can target Qualcomm. That changed everything for me.",
+      quote: "I am ECE and everyone told me to just do web dev. PathFinder showed me the VLSI path and now I know I can target Qualcomm. That changed everything for me.",
       initials: "PN",
       name: "Priya N.",
       role: "2nd year ECE, Kerala",
@@ -30,7 +30,7 @@ export default function StudentStories() {
             Real students, real paths found
           </p>
           <p className="mt-4 text-lg text-zinc-500 dark:text-zinc-400">
-            What students say after using Dishant
+            What students say after using PathFinder
           </p>
         </div>
 
@@ -88,12 +88,12 @@ export default function StudentStories() {
             >
               Find my field
             </Link>
-            <a 
-              href="#signin" 
+            <Link 
+              href="/auth/login" 
               className="text-sm font-semibold text-zinc-300 hover:text-white transition-colors py-2"
             >
               Already have an account? <span className="underline">Sign in</span>
-            </a>
+            </Link>
           </div>
         </div>
 

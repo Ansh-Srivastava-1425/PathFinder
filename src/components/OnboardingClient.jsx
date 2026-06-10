@@ -22,6 +22,7 @@ export default function OnboardingClient({ user }) {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   // Form State
   const [name, setName] = useState("");
@@ -78,8 +79,9 @@ export default function OnboardingClient({ user }) {
   };
 
   // Database Save Logic
-  const saveProfileData = async (skipped = false) => {
+  const saveProfileData = async (skipped = false, selectedFieldSlug = null) => {
     setIsSubmitting(true);
+    setSubmitError("");
     const supabase = createClient();
 
     const payload = skipped
@@ -109,14 +111,28 @@ export default function OnboardingClient({ user }) {
       });
 
       if (error) {
-        console.error("Supabase upsert failed silently:", error.message);
+        throw error;
       }
+
+      if (selectedFieldSlug) {
+        // SUPABASE: ensure column 'chosen_field_id' exists in users table as text type
+        const { error: updateError } = await supabase
+          .from("users")
+          .update({ chosen_field_id: selectedFieldSlug })
+          .eq("id", user.id);
+
+        if (updateError) {
+          throw updateError;
+        }
+      }
+
+      return true;
     } catch (err) {
-      console.error("Supabase users update exception caught silently:", err);
+      console.error("Supabase users update exception caught:", err);
+      setSubmitError("Something went wrong. Please try again.");
+      return false;
     } finally {
       setIsSubmitting(false);
-      // Always redirect to dashboard even if update fails
-      router.push("/dashboard");
     }
   };
 
@@ -144,10 +160,10 @@ export default function OnboardingClient({ user }) {
 
   const handleStep3Finish = async () => {
     if (selectedGoal) {
-      // Save data then go to step 4 (Done Screen)
-      setStep(4);
-      // Trigger silent save in the background
-      await saveProfileData(false);
+      const success = await saveProfileData(false);
+      if (success) {
+        setStep(4);
+      }
     }
   };
 
@@ -305,6 +321,12 @@ export default function OnboardingClient({ user }) {
         {/* Content Card */}
         <div className="bg-white py-8 px-6 shadow-sm rounded-2xl dark:bg-zinc-900/50 border border-zinc-200/80 dark:border-zinc-800/80 transition-colors duration-300">
           
+          {submitError && (
+            <div className="mb-6 p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 rounded-lg text-center font-medium animate-fade-in">
+              {submitError}
+            </div>
+          )}
+
           {/* STEP 1: About You */}
           {step === 1 && (
             <div className="space-y-6 animate-fade-in">
@@ -558,6 +580,13 @@ export default function OnboardingClient({ user }) {
                     <Link
                       key={slug}
                       href={`/explore/${slug}`}
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        const success = await saveProfileData(isSkipped, slug);
+                        if (success) {
+                          router.push(`/explore/${slug}`);
+                        }
+                      }}
                       className="block group"
                     >
                       <div className="flex items-start gap-4 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/20 hover:border-indigo-500 dark:hover:border-indigo-500/80 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm cursor-pointer">
@@ -600,11 +629,10 @@ export default function OnboardingClient({ user }) {
               <div className="pt-4">
                 <button
                   type="button"
-                  disabled={isSubmitting}
-                  onClick={() => saveProfileData(isSkipped)}
-                  className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] cursor-pointer dark:bg-indigo-500 dark:hover:bg-indigo-400"
+                  onClick={() => router.push('/dashboard')}
+                  className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600 transition-colors min-h-[44px] cursor-pointer dark:bg-indigo-500 dark:hover:bg-indigo-400"
                 >
-                  {isSubmitting ? "Finalising..." : "Go to my dashboard →"}
+                  Go to my dashboard →
                 </button>
               </div>
             </div>

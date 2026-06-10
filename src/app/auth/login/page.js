@@ -2,8 +2,13 @@ import Link from "next/link";
 import { login, signInWithGoogle } from "@/actions/auth";
 
 export const metadata = {
-  title: "Log in to Dishant",
-  description: "Log in to your Dishant account to continue your career journey.",
+  title: "Log in to PathFinder",
+  description: "Log in to your PathFinder account to continue your career journey.",
+  openGraph: {
+    title: "Log in to PathFinder",
+    description: "Log in to your PathFinder account to continue your career journey.",
+    siteName: "PathFinder",
+  },
 };
 
 export default async function LoginPage({ searchParams }) {
@@ -28,7 +33,7 @@ export default async function LoginPage({ searchParams }) {
               <circle cx="12" cy="12" r="10" />
               <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
             </svg>
-            <span>Dishant</span>
+            <span>PathFinder</span>
           </Link>
           <h2 className="mt-6 text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
             Welcome back

@@ -2,9 +2,8 @@ import React from "react";
 
 export default function Stats() {
   const stats = [
-    { value: "30+", label: "Tech fields covered" },
-    { value: "2,400+", label: "Students guided" },
-    { value: "15+", label: "Verified mentors" },
+    { value: "13", label: "Career fields" },
+    { value: "Be among the first", label: "Join early" },
     { value: "10", label: "Min to clarity" },
   ];
 

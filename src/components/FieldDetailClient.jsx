@@ -471,7 +471,7 @@ export default function FieldDetailClient({ field, slug }) {
                   ✓
                 </div>
                 <h3 className="text-base font-bold text-white">
-                  Welcome to Dishant!
+                  Welcome to PathFinder!
                 </h3>
                 <p className="text-xs text-zinc-400">
                   Unlocking your roadmap. One second...

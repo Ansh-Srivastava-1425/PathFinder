@@ -18,14 +18,14 @@ export default function Hero() {
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <h1 className="text-4xl font-bold tracking-tight text-zinc-900 sm:text-6xl dark:text-white">
-            Navigate your tech career with <span className="bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent dark:from-indigo-400 dark:to-violet-400">Dishant</span>
+            Navigate your tech career with <span className="bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent dark:from-indigo-400 dark:to-violet-400">PathFinder</span>
           </h1>
           <p className="mt-6 text-lg leading-8 text-zinc-600 dark:text-zinc-400">
             Stop guessing. Follow proven, community-vetted career roadmaps, discover fields that match your interests, and get guided by world-class mentors.
           </p>
           <div className="mt-10 flex items-center justify-center gap-x-6">
             <Link
-              href="/#get-started"
+              href="/auth/signup"
               className="rounded-lg bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 active:bg-indigo-700 transition-all duration-200 dark:bg-indigo-500 dark:hover:bg-indigo-400"
             >
               Get Started

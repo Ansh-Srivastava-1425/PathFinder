@@ -138,7 +138,7 @@ export default function Navbar() {
                 <circle cx="12" cy="12" r="10" />
                 <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
               </svg>
-              <span>Dishant</span>
+              <span>PathFinder</span>
             </Link>
           </div>
 
@@ -155,16 +155,10 @@ export default function Navbar() {
               Explore
             </Link>
             <Link
-              href="/#roadmaps"
+              href="/explore"
               className="text-sm font-medium text-zinc-600 hover:text-indigo-600 dark:text-zinc-300 dark:hover:text-indigo-400 transition-colors duration-200"
             >
               Roadmaps
-            </Link>
-            <Link
-              href="/#mentors"
-              className="text-sm font-medium text-zinc-600 hover:text-indigo-600 dark:text-zinc-300 dark:hover:text-indigo-400 transition-colors duration-200"
-            >
-              Mentors
             </Link>
           </nav>
 
@@ -172,7 +166,7 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-4">
             {!loading && !user && (
               <Link
-                href="/#get-started"
+                href="/auth/signup"
                 className="inline-flex h-9 items-center justify-center rounded-lg bg-indigo-600 px-4 text-sm font-medium text-white hover:bg-indigo-500 active:bg-indigo-700 shadow-sm shadow-indigo-600/10 hover:shadow-md hover:shadow-indigo-600/20 transition-all duration-200 dark:bg-indigo-500 dark:hover:bg-indigo-400"
               >
                 Get Started
@@ -362,18 +356,11 @@ export default function Navbar() {
               Explore
             </Link>
             <Link
-              href="/#roadmaps"
+              href="/explore"
               onClick={() => setIsOpen(false)}
               className="rounded-md px-3 py-2 text-base font-medium text-zinc-600 hover:bg-zinc-50 hover:text-indigo-600 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-indigo-400 transition-colors"
             >
               Roadmaps
-            </Link>
-            <Link
-              href="/#mentors"
-              onClick={() => setIsOpen(false)}
-              className="rounded-md px-3 py-2 text-base font-medium text-zinc-600 hover:bg-zinc-50 hover:text-indigo-600 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-indigo-400 transition-colors"
-            >
-              Mentors
             </Link>
 
             <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800">
@@ -414,7 +401,7 @@ export default function Navbar() {
               ) : (
                 <div className="space-y-3">
                   <Link
-                    href="/#get-started"
+                    href="/auth/signup"
                     onClick={() => setIsOpen(false)}
                     className="flex w-full items-center justify-center rounded-lg bg-indigo-600 px-4 py-2.5 text-center text-sm font-medium text-white hover:bg-indigo-500 transition-colors dark:bg-indigo-500 dark:hover:bg-indigo-400"
                   >

@@ -5,7 +5,7 @@ export default function HowItWorks() {
     {
       number: "1",
       title: "Explore fields",
-      description: "Browse 30+ tech fields. See what each one actually involves.",
+      description: "Browse 13 career fields. See what each one actually involves.",
     },
     {
       number: "2",

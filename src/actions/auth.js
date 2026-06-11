@@ -91,13 +91,16 @@ export async function signInWithGoogle() {
 
 export async function logout() {
   const supabase = await createClient()
-  
-  const { error } = await supabase.auth.signOut()
 
-  if (error) {
-    redirect('/?error=logout_failed')
+  try {
+    await supabase.auth.signOut()
+  } catch (err) {
+    // signOut() failure is non-fatal — the session will expire naturally.
+    // Do NOT call redirect() here; throwing inside a catch corrupts the
+    // NEXT_REDIRECT signal and causes the 'apply' TypeError.
+    console.error('signOut error (non-fatal):', err)
   }
-  
+
   revalidatePath('/', 'layout')
   redirect('/auth/login')
 }

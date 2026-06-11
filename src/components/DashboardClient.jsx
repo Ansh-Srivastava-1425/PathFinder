@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useTransition, useMemo } from "react";
 import Link from "next/link";
 import { fieldsData } from "@/data/fieldsData";
-import { createClient } from "@/lib/supabase/client";
+import { updateStepProgress } from "@/actions/progress";
 
-export default function DashboardClient({ user, userId }) {
+export default function DashboardClient({ user, userId, userProgress = [] }) {
   // Extract user details
   const firstName = user?.full_name ? user.full_name.trim().split(/\s+/)[0] : "student";
   const chosenFieldId = user?.chosen_field_id;
@@ -43,28 +43,41 @@ export default function DashboardClient({ user, userId }) {
 
   const totalWeeks = calculateTotalWeeks();
 
-  const [progressData, setProgressData] = useState([]);
+  // Seed state from the server-side-fetched prop; updates optimistically on step click
+  const [progressData, setProgressData] = useState(userProgress);
+  const [isPending, startTransition] = useTransition();
 
-  useEffect(() => {
-    if (!userId || !chosenFieldId) return;
-
-    const fetchProgress = async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from("user_progress")
-        .select("*")
-        .eq("user_id", userId)
-        .eq("field_slug", chosenFieldId);
-
-      if (!error && data) {
-        setProgressData(data);
+  const handleStepClick = (stepId) => {
+    if (!chosenFieldId) return;
+    startTransition(async () => {
+      const result = await updateStepProgress(chosenFieldId, stepId, 'completed');
+      if (result.success) {
+        // Upsert locally so the UI updates without a full page reload
+        setProgressData((prev) => {
+          const exists = prev.find((r) => r.roadmap_step_id === stepId);
+          if (exists) {
+            return prev.map((r) =>
+              r.roadmap_step_id === stepId
+                ? { ...r, status: 'completed', completed_at: new Date().toISOString() }
+                : r
+            );
+          }
+          return [
+            ...prev,
+            {
+              user_id: userId,
+              field_slug: chosenFieldId,
+              roadmap_step_id: stepId,
+              status: 'completed',
+              completed_at: new Date().toISOString(),
+            },
+          ];
+        });
       } else {
-        console.error("Error fetching progress:", error);
+        console.error('Failed to update step progress:', result.error);
       }
-    };
-
-    fetchProgress();
-  }, [userId, chosenFieldId]);
+    });
+  };
 
   // Derived progress metrics
   const totalRoadmapSteps = field?.roadmap?.length || 0;
@@ -254,9 +267,15 @@ export default function DashboardClient({ user, userId }) {
                 <span>{field.emoji}</span>
                 <span>{field.name}</span>
               </div>
-              {/* TODO: replace with real phase/step indicator */}
               <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                Beginner phase &middot; Step 1 of {field.roadmap?.length || 4}
+                {progressPercent < 25
+                  ? 'Beginner'
+                  : progressPercent < 50
+                  ? 'Intermediate'
+                  : progressPercent < 75
+                  ? 'Advanced'
+                  : 'Job-ready'}{' '}
+                phase &middot; Step {completedSteps + 1} of {totalRoadmapSteps}
               </span>
             </div>
 
@@ -324,10 +343,17 @@ export default function DashboardClient({ user, userId }) {
                 return (
                   <div
                     key={index}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Mark "${stepItem.name}" as completed`}
+                    onClick={() => !isCompleted && handleStepClick(rowId)}
+                    onKeyDown={(e) => e.key === 'Enter' && !isCompleted && handleStepClick(rowId)}
                     className={`flex items-start gap-4 p-4 rounded-xl border bg-white dark:bg-zinc-900/50 shadow-sm transition-all duration-300 ${
-                      isLocked
-                        ? "border-zinc-200 dark:border-zinc-800/40 opacity-60"
-                        : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700"
+                      isCompleted
+                        ? 'border-zinc-200 dark:border-zinc-800/40 cursor-default'
+                        : isPending
+                        ? 'border-zinc-200 dark:border-zinc-800/40 opacity-60 cursor-wait'
+                        : 'border-zinc-200 dark:border-zinc-800 hover:border-indigo-300 dark:hover:border-indigo-700 cursor-pointer'
                     }`}
                   >
                     {/* Status Dot */}

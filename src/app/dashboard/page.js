@@ -47,5 +47,17 @@ export default async function DashboardPage() {
     redirect("/onboarding");
   }
 
-  return <DashboardClient user={userRow} userId={authUser.id} />;
+  // Fetch user's progress rows server-side so DashboardClient starts with real data
+  const { data: userProgress } = await supabase
+    .from('user_progress')
+    .select('*')
+    .eq('user_id', authUser.id);
+
+  return (
+    <DashboardClient
+      user={userRow}
+      userId={authUser.id}
+      userProgress={userProgress || []}
+    />
+  );
 }

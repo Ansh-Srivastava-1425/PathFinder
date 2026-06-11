@@ -3,10 +3,9 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { saveOnboardingData } from "@/actions/onboarding";
 import { fieldsData } from "@/data/fieldsData";
 
-// Slugs mapping as specified in instructions
 const INTEREST_TO_SLUGS = {
   "Hardware & circuits": ["embedded-systems", "vlsi-chip-design"],
   "Robots & automation": ["robotics", "embedded-systems"],
@@ -24,24 +23,19 @@ export default function OnboardingClient({ user }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
-  // Form State
   const [name, setName] = useState("");
   const [yearOfStudy, setYearOfStudy] = useState("");
   const [branch, setBranch] = useState("");
   const [selectedInterests, setSelectedInterests] = useState([]);
   const [selectedGoal, setSelectedGoal] = useState("");
-
-  // Track if they skipped Step 1
   const [isSkipped, setIsSkipped] = useState(false);
 
-  // Interest selection toggler (max 2)
   const handleToggleInterest = (interest) => {
     setSelectedInterests((prev) => {
       if (prev.includes(interest)) {
         return prev.filter((i) => i !== interest);
       } else {
         if (prev.length >= 2) {
-          // Deselect the earliest (first in list) and append new
           return [prev[1], interest];
         } else {
           return [...prev, interest];
@@ -50,43 +44,31 @@ export default function OnboardingClient({ user }) {
     });
   };
 
-  // Recommendations mapping
   const getRecommendations = () => {
     if (isSkipped || selectedInterests.length === 0) {
       return ["robotics", "ai-machine-learning", "web-development"];
     }
-
     const slugs = [];
     selectedInterests.forEach((interest) => {
       const mapped = INTEREST_TO_SLUGS[interest] || [];
       mapped.forEach((slug) => {
-        if (!slugs.includes(slug)) {
-          slugs.push(slug);
-        }
+        if (!slugs.includes(slug)) slugs.push(slug);
       });
     });
-
-    // Pad with defaults if less than 3
     const defaults = ["robotics", "ai-machine-learning", "web-development"];
     for (const defSlug of defaults) {
       if (slugs.length >= 3) break;
-      if (!slugs.includes(defSlug)) {
-        slugs.push(defSlug);
-      }
+      if (!slugs.includes(defSlug)) slugs.push(defSlug);
     }
-
     return slugs.slice(0, 3);
   };
 
-  // Database Save Logic
   const saveProfileData = async (skipped = false, selectedFieldSlug = null) => {
     setIsSubmitting(true);
     setSubmitError("");
-    const supabase = createClient();
 
     const payload = skipped
       ? {
-          id: user.id,
           full_name: "",
           year_of_study: "",
           branch: "",
@@ -95,7 +77,6 @@ export default function OnboardingClient({ user }) {
           onboarding_complete: true,
         }
       : {
-          id: user.id,
           full_name: name,
           year_of_study: yearOfStudy,
           branch: branch,
@@ -104,39 +85,31 @@ export default function OnboardingClient({ user }) {
           onboarding_complete: true,
         };
 
+    if (selectedFieldSlug) {
+      payload.chosen_field_id = selectedFieldSlug;
+    }
+
+    console.log('[saveProfileData] calling server action. Payload:', payload);
+
     try {
-      // Perform database saving in Supabase users table
-      const { error } = await supabase.from("users").upsert(payload, {
-        onConflict: "id",
-      });
+      const result = await saveOnboardingData(payload);
+      console.log('[saveProfileData] server action result:', result);
 
-      if (error) {
-        throw error;
-      }
-
-      if (selectedFieldSlug) {
-        // SUPABASE: ensure column 'chosen_field_id' exists in users table as text type
-        const { error: updateError } = await supabase
-          .from("users")
-          .update({ chosen_field_id: selectedFieldSlug })
-          .eq("id", user.id);
-
-        if (updateError) {
-          throw updateError;
-        }
+      if (!result.success) {
+        setSubmitError(result.error ? `Save failed: ${result.error}` : 'Something went wrong. Please try again.');
+        return false;
       }
 
       return true;
     } catch (err) {
-      console.error("Supabase users update exception caught:", err);
-      setSubmitError("Something went wrong. Please try again.");
+      console.error('[saveProfileData] unexpected error calling server action:', err);
+      setSubmitError('Something went wrong. Please try again.');
       return false;
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Handlers for footer button actions
   const handleStep1Continue = () => {
     if (name.trim() && yearOfStudy && branch) {
       setIsSkipped(false);
@@ -151,7 +124,7 @@ export default function OnboardingClient({ user }) {
     setBranch("");
     setSelectedInterests([]);
     setSelectedGoal("");
-    setStep(4); // Skip directly to Done page
+    setStep(4);
   };
 
   const handleStep2Continue = () => {
@@ -159,6 +132,8 @@ export default function OnboardingClient({ user }) {
   };
 
   const handleStep3Finish = async () => {
+    console.log('button clicked');
+    console.log('DEBUG — selectedGoal:', selectedGoal, '| isSubmitting:', isSubmitting);
     if (selectedGoal) {
       const success = await saveProfileData(false);
       if (success) {
@@ -167,18 +142,12 @@ export default function OnboardingClient({ user }) {
     }
   };
 
-  // Progress Bar styling helper
   const getSegmentStyle = (segNum) => {
-    if (step > segNum) {
-      return { width: "100%", opacity: 0.4 }; // Completed (dimmed)
-    } else if (step === segNum) {
-      return { width: "100%", opacity: 1 }; // Active
-    } else {
-      return { width: "0%", opacity: 0 }; // Incomplete
-    }
+    if (step > segNum) return { width: "100%", opacity: 0.4 };
+    if (step === segNum) return { width: "100%", opacity: 1 };
+    return { width: "0%", opacity: 0 };
   };
 
-  // SVG Icons definitions (stroke-width 2, rounded edges)
   const icons = {
     hardware: (
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-6 h-6">
@@ -276,7 +245,6 @@ export default function OnboardingClient({ user }) {
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-950 px-4 py-12 transition-colors duration-300">
-      {/* Dynamic Keyframes injection for animations */}
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(4px); }
@@ -286,16 +254,11 @@ export default function OnboardingClient({ user }) {
           from { transform: scale(0.85); opacity: 0; }
           to { transform: scale(1); opacity: 1; }
         }
-        .animate-fade-in {
-          animation: fadeIn 0.3s ease-out forwards;
-        }
-        .animate-scale-up {
-          animation: scaleUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-        }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        .animate-scale-up { animation: scaleUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
       `}</style>
 
       <div className="w-full max-w-[480px] space-y-6">
-        {/* Progress Bar Container - suppress on step 4 */}
         {step < 4 && (
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs font-semibold text-zinc-500 dark:text-zinc-400">
@@ -304,10 +267,7 @@ export default function OnboardingClient({ user }) {
             </div>
             <div className="grid grid-cols-3 gap-2">
               {[1, 2, 3].map((segNum) => (
-                <div
-                  key={segNum}
-                  className="relative h-2 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden"
-                >
+                <div key={segNum} className="relative h-2 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
                   <div
                     className="absolute top-0 left-0 h-full bg-indigo-600 dark:bg-indigo-500 rounded-full transition-all duration-500 ease-out"
                     style={getSegmentStyle(segNum)}
@@ -318,57 +278,35 @@ export default function OnboardingClient({ user }) {
           </div>
         )}
 
-        {/* Content Card */}
         <div className="bg-white py-8 px-6 shadow-sm rounded-2xl dark:bg-zinc-900/50 border border-zinc-200/80 dark:border-zinc-800/80 transition-colors duration-300">
-          
+
           {submitError && (
             <div className="mb-6 p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 rounded-lg text-center font-medium animate-fade-in">
               {submitError}
             </div>
           )}
 
-          {/* STEP 1: About You */}
+          {/* STEP 1 */}
           {step === 1 && (
             <div className="space-y-6 animate-fade-in">
               <div className="text-center">
-                <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
-                  Tell us about yourself
-                </h2>
-                <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-                  Just a few quick details so we can personalise your experience.
-                </p>
+                <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">Tell us about yourself</h2>
+                <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">Just a few quick details so we can personalise your experience.</p>
               </div>
-
               <div className="space-y-4">
                 <div>
-                  <label
-                    htmlFor="name"
-                    className="block text-sm font-medium leading-6 text-zinc-900 dark:text-zinc-300 mb-2"
-                  >
-                    Your name
-                  </label>
+                  <label htmlFor="name" className="block text-sm font-medium leading-6 text-zinc-900 dark:text-zinc-300 mb-2">Your name</label>
                   <input
-                    id="name"
-                    type="text"
-                    required
-                    value={name}
+                    id="name" type="text" required value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Ravi Sharma"
                     className="block w-full h-11 rounded-lg border-0 px-3.5 shadow-sm ring-1 ring-inset ring-zinc-300 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm dark:bg-zinc-950 dark:text-white dark:ring-zinc-800 dark:focus:ring-indigo-500"
                   />
                 </div>
-
                 <div>
-                  <label
-                    htmlFor="year"
-                    className="block text-sm font-medium leading-6 text-zinc-900 dark:text-zinc-300 mb-2"
-                  >
-                    Year of study
-                  </label>
+                  <label htmlFor="year" className="block text-sm font-medium leading-6 text-zinc-900 dark:text-zinc-300 mb-2">Year of study</label>
                   <select
-                    id="year"
-                    required
-                    value={yearOfStudy}
+                    id="year" required value={yearOfStudy}
                     onChange={(e) => setYearOfStudy(e.target.value)}
                     className="block w-full h-11 rounded-lg border-0 px-3.5 shadow-sm ring-1 ring-inset ring-zinc-300 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white dark:ring-zinc-800 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
                   >
@@ -382,18 +320,10 @@ export default function OnboardingClient({ user }) {
                     <option value="Working professional">Working professional</option>
                   </select>
                 </div>
-
                 <div>
-                  <label
-                    htmlFor="branch"
-                    className="block text-sm font-medium leading-6 text-zinc-900 dark:text-zinc-300 mb-2"
-                  >
-                    Branch / stream
-                  </label>
+                  <label htmlFor="branch" className="block text-sm font-medium leading-6 text-zinc-900 dark:text-zinc-300 mb-2">Branch / stream</label>
                   <select
-                    id="branch"
-                    required
-                    value={branch}
+                    id="branch" required value={branch}
                     onChange={(e) => setBranch(e.target.value)}
                     className="block w-full h-11 rounded-lg border-0 px-3.5 shadow-sm ring-1 ring-inset ring-zinc-300 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white dark:ring-zinc-800 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
                   >
@@ -408,47 +338,30 @@ export default function OnboardingClient({ user }) {
                   </select>
                 </div>
               </div>
-
-              {/* Step 1 Footer */}
               <div className="flex items-center justify-between pt-4 border-t border-zinc-100 dark:border-zinc-800/60">
-                <button
-                  type="button"
-                  onClick={handleStep1Skip}
-                  className="text-sm font-semibold text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100 min-h-[44px] px-2 flex items-center transition-colors cursor-pointer"
-                >
+                <button type="button" onClick={handleStep1Skip} className="text-sm font-semibold text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100 min-h-[44px] px-2 flex items-center transition-colors cursor-pointer">
                   Skip for now
                 </button>
-                <button
-                  type="button"
-                  disabled={!name.trim() || !yearOfStudy || !branch}
-                  onClick={handleStep1Continue}
-                  className="flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] cursor-pointer dark:bg-indigo-500 dark:hover:bg-indigo-400"
-                >
+                <button type="button" disabled={!name.trim() || !yearOfStudy || !branch} onClick={handleStep1Continue} className="flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] cursor-pointer dark:bg-indigo-500 dark:hover:bg-indigo-400">
                   Continue →
                 </button>
               </div>
             </div>
           )}
 
-          {/* STEP 2: Interests */}
+          {/* STEP 2 */}
           {step === 2 && (
             <div className="space-y-6 animate-fade-in">
               <div className="text-center">
-                <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
-                  What excites you most?
-                </h2>
-                <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-                  Pick up to 2. This helps us show you the right fields.
-                </p>
+                <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">What excites you most?</h2>
+                <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">Pick up to 2. This helps us show you the right fields.</p>
               </div>
-
               <div className="grid grid-cols-2 gap-3">
                 {interestOptions.map((opt) => {
                   const isSelected = selectedInterests.includes(opt.label);
                   return (
                     <button
-                      key={opt.label}
-                      type="button"
+                      key={opt.label} type="button"
                       onClick={() => handleToggleInterest(opt.label)}
                       className={`flex flex-col items-center justify-center p-4 border rounded-xl text-center transition-all duration-200 cursor-pointer min-h-[110px] gap-2 ${
                         isSelected
@@ -464,46 +377,30 @@ export default function OnboardingClient({ user }) {
                   );
                 })}
               </div>
-
-              {/* Step 2 Footer */}
               <div className="flex items-center justify-between pt-4 border-t border-zinc-100 dark:border-zinc-800/60">
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="text-sm font-semibold text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100 min-h-[44px] px-2 flex items-center transition-colors cursor-pointer"
-                >
+                <button type="button" onClick={() => setStep(1)} className="text-sm font-semibold text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100 min-h-[44px] px-2 flex items-center transition-colors cursor-pointer">
                   ← Back
                 </button>
-                <button
-                  type="button"
-                  onClick={handleStep2Continue}
-                  className="flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600 transition-colors min-h-[44px] cursor-pointer dark:bg-indigo-500 dark:hover:bg-indigo-400"
-                >
+                <button type="button" onClick={handleStep2Continue} className="flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 transition-colors min-h-[44px] cursor-pointer dark:bg-indigo-500 dark:hover:bg-indigo-400">
                   Continue →
                 </button>
               </div>
             </div>
           )}
 
-          {/* STEP 3: Goal */}
+          {/* STEP 3 */}
           {step === 3 && (
             <div className="space-y-6 animate-fade-in">
               <div className="text-center">
-                <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
-                  What's your main goal?
-                </h2>
-                <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-                  We'll tailor your roadmap and recommendations around this.
-                </p>
+                <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">What's your main goal?</h2>
+                <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">We'll tailor your roadmap and recommendations around this.</p>
               </div>
-
               <div className="space-y-3">
                 {goalOptions.map((opt) => {
                   const isSelected = selectedGoal === opt.label;
                   return (
                     <button
-                      key={opt.label}
-                      type="button"
+                      key={opt.label} type="button"
                       onClick={() => setSelectedGoal(opt.label)}
                       className={`flex items-center gap-4 p-4 border rounded-xl text-left transition-all duration-200 cursor-pointer min-h-[56px] w-full ${
                         isSelected
@@ -519,21 +416,22 @@ export default function OnboardingClient({ user }) {
                   );
                 })}
               </div>
-
-              {/* Step 3 Footer */}
+              {/* 🐛 DEBUG BANNER — remove before shipping */}
+              <div style={{ fontSize: '11px', fontFamily: 'monospace', background: '#fef9c3', border: '1px solid #fde047', borderRadius: '6px', padding: '6px 10px', marginBottom: '4px', color: '#713f12', lineHeight: '1.6' }}>
+                <strong>DEBUG</strong> &nbsp;|&nbsp;
+                <span>selectedGoal: <code style={{ background: '#fef08a', padding: '0 4px', borderRadius: '3px' }}>{selectedGoal ? `"${selectedGoal}"` : '(empty — button will be DISABLED)'}</code></span>
+                &nbsp;|&nbsp;
+                <span>isSubmitting: <code style={{ background: '#fef08a', padding: '0 4px', borderRadius: '3px' }}>{String(isSubmitting)}</code></span>
+              </div>
               <div className="flex items-center justify-between pt-4 border-t border-zinc-100 dark:border-zinc-800/60">
-                <button
-                  type="button"
-                  onClick={() => setStep(2)}
-                  className="text-sm font-semibold text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100 min-h-[44px] px-2 flex items-center transition-colors cursor-pointer"
-                >
+                <button type="button" onClick={() => setStep(2)} className="text-sm font-semibold text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100 min-h-[44px] px-2 flex items-center transition-colors cursor-pointer">
                   ← Back
                 </button>
                 <button
                   type="button"
                   disabled={!selectedGoal || isSubmitting}
                   onClick={handleStep3Finish}
-                  className="flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] cursor-pointer dark:bg-indigo-500 dark:hover:bg-indigo-400"
+                  className="flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] cursor-pointer dark:bg-indigo-500 dark:hover:bg-indigo-400"
                 >
                   {isSubmitting ? "Saving..." : "Finish setup ✓"}
                 </button>
@@ -541,37 +439,21 @@ export default function OnboardingClient({ user }) {
             </div>
           )}
 
-          {/* STEP 4: Done Screen */}
+          {/* STEP 4 */}
           {step === 4 && (
             <div className="space-y-6 animate-fade-in">
               <div className="text-center">
-                {/* Sparkle graphic with entrance scale up */}
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 mb-4 animate-scale-up">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth="2"
-                    stroke="currentColor"
-                    className="w-7 h-7"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M9.813 15.904 9 21l-.813-5.096L3 15l5.096-.813L9 9l.813 5.096L15 15l-5.187.904ZM18 9.75 17.25 12l-.75-2.25L14.25 9l2.25-.75L17.25 6l.75 2.25L20.25 9l-2.25.75ZM20.25 18l-.5 1.5-.5-1.5-1.5-.5 1.5-.5.5-1.5.5 1.5 1.5.5-1.5.5Z"
-                    />
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-7 h-7">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 21l-.813-5.096L3 15l5.096-.813L9 9l.813 5.096L15 15l-5.187.904ZM18 9.75 17.25 12l-.75-2.25L14.25 9l2.25-.75L17.25 6l.75 2.25L20.25 9l-2.25.75ZM20.25 18l-.5 1.5-.5-1.5-1.5-.5 1.5-.5.5-1.5.5 1.5 1.5.5-1.5.5Z" />
                   </svg>
                 </div>
-
                 <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
                   {name ? `You're all set, ${name}!` : "You're all set!"}
                 </h2>
-                <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-                  Based on your answers, here are your top field matches to start exploring.
-                </p>
+                <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">Based on your answers, here are your top field matches to start exploring.</p>
               </div>
 
-              {/* 3 Recommended Fields Vertical List */}
               <div className="space-y-3">
                 {recommendedSlugs.map((slug) => {
                   const field = fieldsData[slug];
@@ -583,35 +465,26 @@ export default function OnboardingClient({ user }) {
                       onClick={async (e) => {
                         e.preventDefault();
                         const success = await saveProfileData(isSkipped, slug);
-                        if (success) {
-                          router.push(`/explore/${slug}`);
-                        }
+                        if (success) router.push(`/explore/${slug}`);
                       }}
                       className="block group"
                     >
                       <div className="flex items-start gap-4 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/20 hover:border-indigo-500 dark:hover:border-indigo-500/80 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm cursor-pointer">
-                        <span className="text-3xl flex-shrink-0" role="img" aria-label={field.name}>
-                          {field.emoji}
-                        </span>
-                        
+                        <span className="text-3xl flex-shrink-0" role="img" aria-label={field.name}>{field.emoji}</span>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
                             <h4 className="font-semibold text-zinc-900 dark:text-white text-sm truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                               {field.name}
                             </h4>
                             <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider border flex-shrink-0 ${
-                              field.badges?.isGem 
-                                ? "bg-violet-50 dark:bg-violet-950/50 text-violet-600 dark:text-violet-300 border-violet-200/60 dark:border-violet-850" 
-                                : "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-850"
+                              field.badges?.isGem
+                                ? "bg-violet-50 dark:bg-violet-950/50 text-violet-600 dark:text-violet-300 border-violet-200/60"
+                                : "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-300 border-emerald-200/60"
                             }`}>
                               {field.badges?.isGem ? "✦ Gem" : "⭐ Popular"}
                             </span>
                           </div>
-                          
-                          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-1">
-                            {field.tagline}
-                          </p>
-
+                          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-1">{field.tagline}</p>
                           <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-zinc-100 dark:border-zinc-800/60 text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold">
                             <span>Salary range:</span>
                             <span className="text-zinc-700 dark:text-zinc-300 font-bold tabular-nums">
@@ -625,12 +498,11 @@ export default function OnboardingClient({ user }) {
                 })}
               </div>
 
-              {/* Done Screen Footer Button */}
               <div className="pt-4">
                 <button
                   type="button"
-                  onClick={() => router.push('/dashboard')}
-                  className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600 transition-colors min-h-[44px] cursor-pointer dark:bg-indigo-500 dark:hover:bg-indigo-400"
+                  onClick={() => router.push("/dashboard")}
+                  className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 transition-colors min-h-[44px] cursor-pointer dark:bg-indigo-500 dark:hover:bg-indigo-400"
                 >
                   Go to my dashboard →
                 </button>

@@ -14,6 +14,30 @@ export default function Navbar() {
   const dropdownRef = useRef(null);
   const mobileDropdownRef = useRef(null);
 
+  // Mentor Waitlist States
+  const [isMentorModalOpen, setIsMentorModalOpen] = useState(false);
+  const [mentorEmail, setMentorEmail] = useState('');
+  const [mentorStatus, setMentorStatus] = useState(null); // null | 'success' | 'error'
+  const [mentorLoading, setMentorLoading] = useState(false);
+
+  const handleMentorSubmit = async (e) => {
+    e.preventDefault();
+    if (!mentorEmail.trim()) return;
+    setMentorLoading(true);
+    setMentorStatus(null);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('waitlist')
+      .insert({ email: mentorEmail, source: 'mentor', created_at: new Date().toISOString() });
+    setMentorLoading(false);
+    if (error) {
+      setMentorStatus('error');
+    } else {
+      setMentorStatus('success');
+      setMentorEmail('');
+    }
+  };
+
   // Auth States
   const [user, setUser] = useState(null);
   const [userRow, setUserRow] = useState(null);
@@ -119,7 +143,8 @@ export default function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-zinc-200/80 bg-white/80 backdrop-blur-md dark:border-zinc-800/80 dark:bg-zinc-950/80 transition-colors duration-300">
+    <>
+      <header className="sticky top-0 z-50 w-full border-b border-zinc-200/80 bg-white/80 backdrop-blur-md dark:border-zinc-800/80 dark:bg-zinc-950/80 transition-colors duration-300">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
@@ -160,6 +185,12 @@ export default function Navbar() {
             >
               Roadmaps
             </Link>
+            <button
+              onClick={() => setIsMentorModalOpen(true)}
+              className="text-sm font-medium text-zinc-600 hover:text-indigo-600 dark:text-zinc-300 dark:hover:text-indigo-400 transition-colors duration-200"
+            >
+              Talk to a mentor
+            </button>
           </nav>
 
           {/* Desktop Profile / Signin Actions */}
@@ -362,6 +393,15 @@ export default function Navbar() {
             >
               Roadmaps
             </Link>
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                setIsMentorModalOpen(true);
+              }}
+              className="text-left rounded-md px-3 py-2 text-base font-medium text-zinc-600 hover:bg-zinc-50 hover:text-indigo-600 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-indigo-400 transition-colors"
+            >
+              Talk to a mentor
+            </button>
 
             <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800">
               {loading ? (
@@ -430,5 +470,55 @@ export default function Navbar() {
         </div>
       )}
     </header>
+      {/* Mentor Waitlist Modal */}
+      {isMentorModalOpen && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-[60] animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl p-6 relative">
+            <button
+              onClick={() => { setIsMentorModalOpen(false); setMentorStatus(null); setMentorEmail(''); }}
+              className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors cursor-pointer"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-base font-bold text-white">Coming soon</h3>
+                <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+                  We&apos;re onboarding verified mentors. Drop your email to be notified when this launches.
+                </p>
+              </div>
+
+              {mentorStatus === 'success' ? (
+                <p className="text-sm font-semibold text-emerald-400">You&apos;re on the list!</p>
+              ) : (
+                <form onSubmit={handleMentorSubmit} className="space-y-3">
+                  <input
+                    type="email"
+                    required
+                    value={mentorEmail}
+                    onChange={(e) => setMentorEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    className="w-full rounded-lg bg-zinc-950 border border-zinc-800 px-3.5 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500"
+                  />
+                  {mentorStatus === 'error' && (
+                    <p className="text-xs text-red-400">Something went wrong. Please try again.</p>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={mentorLoading}
+                    className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-500 py-2.5 text-sm font-bold text-white transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {mentorLoading ? 'Saving...' : 'Notify me'}
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

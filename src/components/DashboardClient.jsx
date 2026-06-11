@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition, useMemo } from "react";
+import React, { useState, useTransition, useMemo, useRef } from "react";
 import Link from "next/link";
 import { fieldsData } from "@/data/fieldsData";
 import { updateStepProgress } from "@/actions/progress";
@@ -47,6 +47,11 @@ export default function DashboardClient({ user, userId, userProgress = [] }) {
   const [progressData, setProgressData] = useState(userProgress);
   const [isPending, startTransition] = useTransition();
 
+  // AI Advisor state
+  const [advisorQuestion, setAdvisorQuestion] = useState('');
+  const [advisorResponse, setAdvisorResponse] = useState('');
+  const [advisorLoading, setAdvisorLoading] = useState(false);
+
   const handleStepClick = (stepId) => {
     if (!chosenFieldId) return;
     startTransition(async () => {
@@ -77,6 +82,26 @@ export default function DashboardClient({ user, userId, userProgress = [] }) {
         console.error('Failed to update step progress:', result.error);
       }
     });
+  };
+
+  // AI Advisor handler
+  const handleAskAdvisor = async () => {
+    if (!advisorQuestion.trim()) return;
+    setAdvisorLoading(true);
+    setAdvisorResponse('');
+    try {
+      const response = await fetch('/api/advisor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: advisorQuestion })
+      });
+      const data = await response.json();
+      setAdvisorResponse(data.reply);
+    } catch(err) {
+      setAdvisorResponse('Sorry, something went wrong. Please try again.');
+    } finally {
+      setAdvisorLoading(false);
+    }
   };
 
   // Derived progress metrics
@@ -448,31 +473,65 @@ export default function DashboardClient({ user, userId, userProgress = [] }) {
         </div>
 
         {/* SECTION 6: AI Advisor Card */}
-        <div className="bg-white dark:bg-zinc-900/50 border border-zinc-200/80 dark:border-zinc-800/80 p-5 rounded-2xl shadow-sm transition-colors duration-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-start gap-4">
+        <div className="bg-white dark:bg-zinc-900/50 border border-zinc-200/80 dark:border-zinc-800/80 p-5 rounded-2xl shadow-sm transition-colors duration-300 space-y-4">
+          {/* Card header */}
+          <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center flex-shrink-0 border border-indigo-100 dark:border-indigo-900/40">
               {SparklesIcon}
             </div>
-            
-            <div className="space-y-0.5">
-              <h4 className="text-sm font-bold text-zinc-900 dark:text-white">
-                Ask your AI advisor
-              </h4>
-              <p className="text-xs italic text-zinc-500 dark:text-zinc-400 leading-normal">
-                &ldquo;{getAiAdvisorPrompt()}&rdquo;
-              </p>
+            <div>
+              <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Ask your AI advisor</h4>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">Powered by PathFinder AI · India-focused career advice</p>
             </div>
           </div>
 
-          <div className="w-full sm:w-auto">
+          {/* Input row */}
+          <div className="flex gap-2">
+            <input
+              id="advisor-question-input"
+              type="text"
+              value={advisorQuestion}
+              onChange={(e) => setAdvisorQuestion(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && !advisorLoading && handleAskAdvisor()}
+              placeholder="Ask me anything about your career path..."
+              disabled={advisorLoading}
+              className="flex-1 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2.5 text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-colors disabled:opacity-60"
+            />
             <button
+              id="advisor-send-btn"
               type="button"
-              onClick={() => alert("Coming soon")}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-1 rounded-lg bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-500 transition-colors min-h-[44px] cursor-pointer dark:bg-indigo-500 dark:hover:bg-indigo-400"
+              onClick={handleAskAdvisor}
+              disabled={advisorLoading || !advisorQuestion.trim()}
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 dark:bg-indigo-500 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-500 dark:hover:bg-indigo-400 transition-colors min-h-[44px] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Ask →
+              {advisorLoading ? (
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+              ) : (
+                <>Send →</>
+              )}
             </button>
           </div>
+
+          {/* Loading indicator */}
+          {advisorLoading && (
+            <div className="flex items-center gap-2 text-xs text-indigo-500 dark:text-indigo-400">
+              <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+              </svg>
+              PathFinder AI is thinking…
+            </div>
+          )}
+
+          {/* Response area */}
+          {advisorResponse && !advisorLoading && (
+            <div className="rounded-xl border border-indigo-100 dark:border-indigo-900/40 bg-indigo-50 dark:bg-indigo-950/20 px-4 py-3 text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap">
+              {advisorResponse}
+            </div>
+          )}
         </div>
 
       </div>

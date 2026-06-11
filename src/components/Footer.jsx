@@ -1,10 +1,34 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterStatus, setNewsletterStatus] = useState(null); // null | 'success' | 'error'
+  const [newsletterLoading, setNewsletterLoading] = useState(false);
+
+  const handleNewsletterSubmit = async (e) => {
+    e.preventDefault();
+    if (!newsletterEmail.trim()) return;
+    setNewsletterLoading(true);
+    setNewsletterStatus(null);
+    // SUPABASE: ensure waitlist table exists with columns: id, email, source, created_at
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('waitlist')
+      .insert({ email: newsletterEmail, source: 'newsletter', created_at: new Date().toISOString() });
+    setNewsletterLoading(false);
+    if (error) {
+      setNewsletterStatus('error');
+    } else {
+      setNewsletterStatus('success');
+      setNewsletterEmail('');
+    }
+  };
 
   const links = {
     explore: [
@@ -112,7 +136,7 @@ export default function Footer() {
               The latest roadmaps, hidden tech gem discoveries, and career advice delivered straight to your inbox weekly.
             </p>
           </div>
-          <form className="mt-6 sm:flex sm:max-w-md xl:mt-0 gap-3 w-full" onSubmit={(e) => e.preventDefault()}>
+          <form className="mt-6 sm:flex sm:max-w-md xl:mt-0 gap-3 w-full" onSubmit={handleNewsletterSubmit}>
             <label htmlFor="email-address" className="sr-only">
               Email address
             </label>
@@ -121,15 +145,22 @@ export default function Footer() {
               name="email-address"
               id="email-address"
               required
+              value={newsletterEmail}
+              onChange={(e) => setNewsletterEmail(e.target.value)}
               className="w-full min-w-0 rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-900 shadow-sm placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-550 dark:focus:border-indigo-500 transition-colors"
               placeholder="Enter your email"
             />
-            <button
-              type="submit"
-              className="mt-4 flex w-full items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 active:bg-indigo-700 transition-all duration-200 sm:mt-0 sm:w-auto shrink-0 dark:bg-indigo-500 dark:hover:bg-indigo-400"
-            >
-              Subscribe
-            </button>
+            {newsletterStatus === 'success' ? (
+              <p className="mt-4 sm:mt-0 sm:ml-2 flex items-center text-sm font-semibold text-emerald-500 dark:text-emerald-400 shrink-0">Subscribed!</p>
+            ) : (
+              <button
+                type="submit"
+                disabled={newsletterLoading}
+                className="mt-4 flex w-full items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 active:bg-indigo-700 transition-all duration-200 sm:mt-0 sm:w-auto shrink-0 dark:bg-indigo-500 dark:hover:bg-indigo-400 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {newsletterLoading ? 'Saving...' : 'Subscribe'}
+              </button>
+            )}
           </form>
         </div>
 

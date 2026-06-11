@@ -2,25 +2,31 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 
 export default function FieldDetailClient({ field, slug }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ name: "", email: "", branch: "" });
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [mentorEmail, setMentorEmail] = useState('');
+  const [mentorStatus, setMentorStatus] = useState(null); // null | 'success' | 'error'
+  const [mentorLoading, setMentorLoading] = useState(false);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = (e) => {
+  const handleMentorSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitted(true);
-    setTimeout(() => {
-      setIsModalOpen(false);
-      setIsSubmitted(false);
-      setFormData({ name: "", email: "", branch: "" });
-    }, 2000);
+    if (!mentorEmail.trim()) return;
+    setMentorLoading(true);
+    setMentorStatus(null);
+    // SUPABASE: ensure waitlist table exists with columns: id, email, source, created_at
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('waitlist')
+      .insert({ email: mentorEmail, source: 'mentor', created_at: new Date().toISOString() });
+    setMentorLoading(false);
+    if (error) {
+      setMentorStatus('error');
+    } else {
+      setMentorStatus('success');
+      setMentorEmail('');
+    }
   };
 
   // Theme maps for company cards
@@ -452,12 +458,12 @@ export default function FieldDetailClient({ field, slug }) {
         </div>
       </div>
 
-      {/* ── Sign-up Modal ────────────────────────────────────── */}
+      {/* ── Mentor Waitlist Modal ─────────────────────────────── */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
           <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl p-6 relative">
             <button
-              onClick={() => setIsModalOpen(false)}
+              onClick={() => { setIsModalOpen(false); setMentorStatus(null); setMentorEmail(''); }}
               className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors cursor-pointer"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -465,84 +471,39 @@ export default function FieldDetailClient({ field, slug }) {
               </svg>
             </button>
 
-            {isSubmitted ? (
-              <div className="text-center py-6 space-y-3">
-                <div className="h-12 w-12 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
-                  ✓
-                </div>
-                <h3 className="text-base font-bold text-white">
-                  Welcome to PathFinder!
-                </h3>
-                <p className="text-xs text-zinc-400">
-                  Unlocking your roadmap. One second...
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-base font-bold text-white">Coming soon</h3>
+                <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+                  We&apos;re onboarding verified mentors. Drop your email to be notified when this launches.
                 </p>
               </div>
-            ) : (
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-base font-bold text-white">
-                    Unlock all {field.name} content
-                  </h3>
-                  <p className="text-xs text-zinc-400 mt-1">
-                    Get access to the full roadmap, resources, and mentor connects.
-                  </p>
-                </div>
 
-                <form onSubmit={handleSubmit} className="space-y-3">
-                  <div>
-                    <label className="block text-[9px] font-bold tracking-wider uppercase text-zinc-500 mb-1">
-                      Full Name
-                    </label>
-                    <input
-                      type="text"
-                      name="name"
-                      required
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      placeholder="e.g. Rahul Sharma"
-                      className="w-full rounded-lg bg-zinc-950 border border-zinc-800 px-3.5 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[9px] font-bold tracking-wider uppercase text-zinc-500 mb-1">
-                      Email Address
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      required
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      placeholder="e.g. rahul@college.edu.in"
-                      className="w-full rounded-lg bg-zinc-950 border border-zinc-800 px-3.5 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[9px] font-bold tracking-wider uppercase text-zinc-500 mb-1">
-                      Engineering Branch
-                    </label>
-                    <input
-                      type="text"
-                      name="branch"
-                      required
-                      value={formData.branch}
-                      onChange={handleInputChange}
-                      placeholder="e.g. ECE / Mech / CSE"
-                      className="w-full rounded-lg bg-zinc-950 border border-zinc-800 px-3.5 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500"
-                    />
-                  </div>
-
+              {mentorStatus === 'success' ? (
+                <p className="text-sm font-semibold text-emerald-400">You&apos;re on the list!</p>
+              ) : (
+                <form onSubmit={handleMentorSubmit} className="space-y-3">
+                  <input
+                    type="email"
+                    required
+                    value={mentorEmail}
+                    onChange={(e) => setMentorEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    className="w-full rounded-lg bg-zinc-950 border border-zinc-800 px-3.5 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500"
+                  />
+                  {mentorStatus === 'error' && (
+                    <p className="text-xs text-red-400">Something went wrong. Please try again.</p>
+                  )}
                   <button
                     type="submit"
-                    className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-500 py-2.5 text-sm font-bold text-white transition-colors pt-2 cursor-pointer"
+                    disabled={mentorLoading}
+                    className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-500 py-2.5 text-sm font-bold text-white transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    Unlock roadmap for free
+                    {mentorLoading ? 'Saving...' : 'Notify me'}
                   </button>
                 </form>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}

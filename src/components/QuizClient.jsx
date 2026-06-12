@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { assignRoadmap } from "@/app/actions/assignRoadmap";
 
 // ─── Quiz Data ────────────────────────────────────────────────────────────────
 
@@ -787,7 +789,7 @@ function ResultCard({ result, rank, visible, delay }) {
   );
 }
 
-function ResultsScreen({ results, visible, onStartRoadmap }) {
+function ResultsScreen({ results, visible, onStartRoadmap, isAssigning, assignError }) {
   return (
     <div
       style={{
@@ -869,34 +871,99 @@ function ResultsScreen({ results, visible, onStartRoadmap }) {
             gap: "12px",
           }}
         >
+          <style>{`
+            @keyframes spin {
+              from { transform: rotate(0deg); }
+              to { transform: rotate(360deg); }
+            }
+          `}</style>
+
+          {assignError && (
+            <div
+              style={{
+                padding: "12px",
+                borderRadius: "8px",
+                backgroundColor: "rgba(239, 68, 68, 0.1)",
+                border: "1px solid rgba(239, 68, 68, 0.2)",
+                color: "#f87171",
+                fontSize: "0.875rem",
+                textAlign: "center",
+                marginBottom: "4px",
+                fontWeight: 500
+              }}
+            >
+              {assignError}
+            </div>
+          )}
+
           <button
-            onClick={onStartRoadmap}
+            onClick={isAssigning ? undefined : onStartRoadmap}
+            disabled={isAssigning}
             style={{
               width: "100%",
               padding: "14px 24px",
               borderRadius: "12px",
               border: "none",
-              backgroundColor: "#6366f1",
-              color: "#fff",
+              backgroundColor: isAssigning ? "#27272a" : "#6366f1",
+              color: isAssigning ? "#71717a" : "#fff",
               fontSize: "0.95rem",
               fontWeight: 600,
-              cursor: "pointer",
+              cursor: isAssigning ? "not-allowed" : "pointer",
               transition: "all 0.15s ease",
-              boxShadow: "0 4px 20px rgba(99,102,241,0.35)",
+              boxShadow: isAssigning ? "none" : "0 4px 20px rgba(99,102,241,0.35)",
               letterSpacing: "-0.01em",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px"
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#818cf8";
-              e.currentTarget.style.boxShadow =
-                "0 6px 24px rgba(99,102,241,0.45)";
+              if (!isAssigning) {
+                e.currentTarget.style.backgroundColor = "#818cf8";
+                e.currentTarget.style.boxShadow =
+                  "0 6px 24px rgba(99,102,241,0.45)";
+              }
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "#6366f1";
-              e.currentTarget.style.boxShadow =
-                "0 4px 20px rgba(99,102,241,0.35)";
+              if (!isAssigning) {
+                e.currentTarget.style.backgroundColor = "#6366f1";
+                e.currentTarget.style.boxShadow =
+                  "0 4px 20px rgba(99,102,241,0.35)";
+              }
             }}
           >
-            Start my {results[0]?.name} roadmap →
+            {isAssigning ? (
+              <>
+                <svg
+                  style={{
+                    animation: "spin 1s linear infinite",
+                    width: "18px",
+                    height: "18px",
+                    color: "currentColor"
+                  }}
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    style={{ opacity: 0.25 }}
+                  />
+                  <path
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    style={{ opacity: 0.75 }}
+                  />
+                </svg>
+                <span>Creating your roadmap...</span>
+              </>
+            ) : (
+              <span>Start my {results[0]?.name} roadmap →</span>
+            )}
           </button>
 
           {/* Per-field explore buttons */}
@@ -960,11 +1027,35 @@ function ResultsScreen({ results, visible, onStartRoadmap }) {
 // ─── Main Quiz Component ──────────────────────────────────────────────────────
 
 export default function QuizClient() {
+  const router = useRouter();
   const [screen, setScreen] = useState("quiz"); // "quiz" | "processing" | "results"
   const [qIndex, setQIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [transitioning, setTransitioning] = useState(false);
   const [results, setResults] = useState([]);
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [assignError, setAssignError] = useState("");
+
+  async function handleStartRoadmap() {
+    if (results.length === 0 || isAssigning) return;
+    setIsAssigning(true);
+    setAssignError("");
+
+    try {
+      const topResult = results[0];
+      const result = await assignRoadmap(topResult.slug);
+      if (result.success) {
+        router.push("/dashboard");
+      } else {
+        setAssignError(result.error || "Failed to assign roadmap. Please try again.");
+        setIsAssigning(false);
+      }
+    } catch (err) {
+      console.error("Error in handleStartRoadmap:", err);
+      setAssignError("An unexpected error occurred. Please try again.");
+      setIsAssigning(false);
+    }
+  }
 
   const currentAnswer = answers[qIndex];
 
@@ -1050,8 +1141,9 @@ export default function QuizClient() {
           <ResultsScreen
             results={results}
             visible={screen === "results"}
-            onStartRoadmap={() => alert(`Starting your ${results[0]?.name} roadmap — coming soon!`)}
-
+            onStartRoadmap={handleStartRoadmap}
+            isAssigning={isAssigning}
+            assignError={assignError}
           />
         )}
       </main>

@@ -2,12 +2,12 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
+import { submitWaitlist } from "@/actions/submitWaitlist";
 
 export default function FieldDetailClient({ field, slug }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [mentorEmail, setMentorEmail] = useState('');
-  const [mentorStatus, setMentorStatus] = useState(null); // null | 'success' | 'error'
+  const [mentorStatus, setMentorStatus] = useState(null); // null | 'success' | string (error message)
   const [mentorLoading, setMentorLoading] = useState(false);
 
   const handleMentorSubmit = async (e) => {
@@ -15,17 +15,18 @@ export default function FieldDetailClient({ field, slug }) {
     if (!mentorEmail.trim()) return;
     setMentorLoading(true);
     setMentorStatus(null);
-    // SUPABASE: ensure waitlist table exists with columns: id, email, source, created_at
-    const supabase = createClient();
-    const { error } = await supabase
-      .from('waitlist')
-      .insert({ email: mentorEmail, source: 'mentor', created_at: new Date().toISOString() });
-    setMentorLoading(false);
-    if (error) {
-      setMentorStatus('error');
-    } else {
-      setMentorStatus('success');
-      setMentorEmail('');
+    try {
+      const res = await submitWaitlist({ email: mentorEmail, source: 'mentor' });
+      if (res.success) {
+        setMentorStatus('success');
+        setMentorEmail('');
+      } else {
+        setMentorStatus(res.error || 'Failed to join waitlist.');
+      }
+    } catch (err) {
+      setMentorStatus('An unexpected error occurred.');
+    } finally {
+      setMentorLoading(false);
     }
   };
 
@@ -491,8 +492,8 @@ export default function FieldDetailClient({ field, slug }) {
                     placeholder="your@email.com"
                     className="w-full rounded-lg bg-zinc-950 border border-zinc-800 px-3.5 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500"
                   />
-                  {mentorStatus === 'error' && (
-                    <p className="text-xs text-red-400">Something went wrong. Please try again.</p>
+                  {mentorStatus && mentorStatus !== 'success' && (
+                    <p className="text-xs text-red-400">{mentorStatus}</p>
                   )}
                   <button
                     type="submit"

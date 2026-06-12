@@ -1,9 +1,47 @@
 "use client";
 
-import React, { useState, useTransition, useMemo, useRef } from "react";
+import React, { useState, useTransition, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { fieldsData } from "@/data/fieldsData";
 import { updateStepProgress } from "@/actions/progress";
+import StepDetailModal from "@/components/StepDetailModal";
+
+// ─── Sample content for demo steps ─────────────────────────────────────────
+// In production this data comes from the `roadmap_steps` DB table (resources JSONB,
+// project_instructions TEXT, requires_submission BOOLEAN). For now we seed the
+// first 3 steps of every field with realistic content so the modal is demonstrable.
+const STEP_ENRICHMENTS = {
+  // Slot 0 — Step 1 of any field
+  0: {
+    resources: [
+      { title: 'FreeCodeCamp Full Beginner Course (YouTube)', url: 'https://www.youtube.com/c/freecodecamp', type: 'video' },
+      { title: 'MDN Web Docs — Getting Started', url: 'https://developer.mozilla.org/en-US/docs/Learn', type: 'docs' },
+      { title: 'GeeksForGeeks — Step 1 Guide', url: 'https://www.geeksforgeeks.org/', type: 'article' },
+    ],
+    project_instructions: `## Your First Project\n\nBuild a **beginner project** that demonstrates your understanding of this step's core concepts.\n\n### Requirements\n\n- At minimum 50 lines of original code\n- A clear README explaining what the project does\n- The code must run without errors\n\n### Tips\n\n- Start small and iterate. Don't try to build everything at once.\n- Use the resources above before diving in.\n- Push to GitHub and keep commits frequent — recruiters look at commit history!\n\n### Submission\n\nPaste your **public GitHub repository URL** below to unlock this step.`,
+    requires_submission: true,
+  },
+  // Slot 1 — Step 2
+  1: {
+    resources: [
+      { title: 'Official Documentation — Deep Dive', url: 'https://developer.mozilla.org/', type: 'docs' },
+      { title: 'Traversy Media — Crash Course', url: 'https://www.youtube.com/@TraversyMedia', type: 'video' },
+      { title: 'Dev.to — Practical Guide', url: 'https://dev.to/', type: 'article' },
+    ],
+    project_instructions: `## Intermediate Project\n\nNow that you have the basics, it's time to build something **more complex**.\n\n### What to Build\n\n1. Pick a real-world problem relevant to your field\n2. Apply the concepts from Step 2 to solve it\n3. Document your approach in the README\n\n### Checklist\n\n- [ ] Core functionality working\n- [ ] Code is commented and readable\n- [ ] README has setup instructions\n- [ ] At least 2 commits pushed to GitHub\n\n> **Pro tip:** Indian companies like Infosys, Wipro, and TCS love seeing practical GitHub projects. This matters.`,
+    requires_submission: false,
+  },
+  // Slot 2 — Step 3
+  2: {
+    resources: [
+      { title: 'MIT OpenCourseWare — Advanced Material', url: 'https://ocw.mit.edu/', type: 'docs' },
+      { title: 'The Coding Train — Advanced Tutorial', url: 'https://www.youtube.com/@TheCodingTrain', type: 'video' },
+      { title: 'Medium — In-depth Technical Article', url: 'https://medium.com/topic/programming', type: 'article' },
+    ],
+    project_instructions: `## Advanced Step Project\n\nThis step is where beginners become **engineers**. The project here should be production-quality.\n\n### Requirements\n\n- The project must solve a real, non-trivial problem\n- Include unit tests (or at least manual test cases documented in README)\n- Write a proper \`CONTRIBUTING.md\` and \`LICENSE\` file\n\n### Architecture Notes\n\n\`\`\`\nProject/\n├── src/           # Source files\n├── tests/         # Test suite\n├── README.md      # Usage guide\n└── package.json   # Or equivalent\n\`\`\`\n\nPush to a **public GitHub repo** and paste the link below to unlock this step.`,
+    requires_submission: true,
+  },
+}
 
 export default function DashboardClient({ user, userId, userProgress = [] }) {
   // Extract user details
@@ -52,37 +90,52 @@ export default function DashboardClient({ user, userId, userProgress = [] }) {
   const [advisorResponse, setAdvisorResponse] = useState('');
   const [advisorLoading, setAdvisorLoading] = useState(false);
 
-  const handleStepClick = (stepId) => {
-    if (!chosenFieldId) return;
-    startTransition(async () => {
-      const result = await updateStepProgress(chosenFieldId, stepId, 'completed');
-      if (result.success) {
-        // Upsert locally so the UI updates without a full page reload
-        setProgressData((prev) => {
-          const exists = prev.find((r) => r.roadmap_step_id === stepId);
-          if (exists) {
-            return prev.map((r) =>
-              r.roadmap_step_id === stepId
-                ? { ...r, status: 'completed', completed_at: new Date().toISOString() }
-                : r
-            );
-          }
-          return [
-            ...prev,
-            {
-              user_id: userId,
-              field_slug: chosenFieldId,
-              roadmap_step_id: stepId,
-              status: 'completed',
-              completed_at: new Date().toISOString(),
-            },
-          ];
-        });
-      } else {
-        console.error('Failed to update step progress:', result.error);
+  // ── Modal state ─────────────────────────────────────────────────────────────
+  const [selectedStep, setSelectedStep] = useState(null)
+
+  // Opens the modal with the enriched step object
+  const handleStepClick = useCallback((stepItem, stepIndex, stepRow) => {
+    if (!chosenFieldId) return
+    const enrichment = STEP_ENRICHMENTS[stepIndex] || {}
+    setSelectedStep({
+      // Core step info from fieldsData
+      id: stepItem.id || stepItem.name,
+      name: stepItem.name,
+      meta: stepItem.meta,
+      // Resources & instructions: prefer DB values, fall back to sample enrichment
+      resources: stepItem.resources ?? enrichment.resources ?? [],
+      project_instructions: stepItem.project_instructions ?? enrichment.project_instructions ?? null,
+      requires_submission: stepItem.requires_submission ?? enrichment.requires_submission ?? false,
+      // Any existing submission URL stored in personal_note
+      personal_note: stepRow?.personal_note || '',
+    })
+  }, [chosenFieldId])
+
+  const handleModalClose = useCallback(() => setSelectedStep(null), [])
+
+  // Optimistic update called by the modal after a successful action
+  const handleStepComplete = useCallback((stepId) => {
+    setProgressData((prev) => {
+      const exists = prev.find((r) => r.roadmap_step_id === stepId)
+      if (exists) {
+        return prev.map((r) =>
+          r.roadmap_step_id === stepId
+            ? { ...r, status: 'completed', completed_at: new Date().toISOString() }
+            : r
+        )
       }
-    });
-  };
+      return [
+        ...prev,
+        {
+          user_id: userId,
+          field_slug: chosenFieldId,
+          roadmap_step_id: stepId,
+          status: 'completed',
+          completed_at: new Date().toISOString(),
+        },
+      ]
+    })
+  }, [userId, chosenFieldId])
 
   // AI Advisor handler
   const handleAskAdvisor = async () => {
@@ -210,6 +263,7 @@ export default function DashboardClient({ user, userId, userProgress = [] }) {
   );
 
   return (
+    <>
     <div className="flex-1 flex flex-col items-center bg-zinc-50 dark:bg-zinc-950 px-4 py-8 sm:px-6 lg:px-8 transition-colors duration-300">
       <div className="w-full max-w-[720px] space-y-8">
         
@@ -360,26 +414,22 @@ export default function DashboardClient({ user, userId, userProgress = [] }) {
 
                 const isCompleted = stepRow?.status === "completed";
                 const isInProgress = stepRow?.status === "in_progress";
-                const isLocked = !isCompleted && !isInProgress;
 
                 // Est weeks for current
                 const stepWeeks = stepItem.meta?.split(" • ")[0] || "4 weeks";
+                // Does this step require a GitHub submission? (from DB or sample enrichment)
+                const enrichment = STEP_ENRICHMENTS[index] || {};
+                const requiresSubmission = stepItem.requires_submission ?? enrichment.requires_submission ?? false;
 
                 return (
                   <div
                     key={index}
                     role="button"
                     tabIndex={0}
-                    aria-label={`Mark "${stepItem.name}" as completed`}
-                    onClick={() => !isCompleted && handleStepClick(rowId)}
-                    onKeyDown={(e) => e.key === 'Enter' && !isCompleted && handleStepClick(rowId)}
-                    className={`flex items-start gap-4 p-4 rounded-xl border bg-white dark:bg-zinc-900/50 shadow-sm transition-all duration-300 ${
-                      isCompleted
-                        ? 'border-zinc-200 dark:border-zinc-800/40 cursor-default'
-                        : isPending
-                        ? 'border-zinc-200 dark:border-zinc-800/40 opacity-60 cursor-wait'
-                        : 'border-zinc-200 dark:border-zinc-800 hover:border-indigo-300 dark:hover:border-indigo-700 cursor-pointer'
-                    }`}
+                    aria-label={`Open step: ${stepItem.name}`}
+                    onClick={() => handleStepClick(stepItem, index, stepRow)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleStepClick(stepItem, index, stepRow)}
+                    className="flex items-start gap-4 p-4 rounded-xl border bg-white dark:bg-zinc-900/50 shadow-sm transition-all duration-200 border-zinc-200 dark:border-zinc-800 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-md cursor-pointer group"
                   >
                     {/* Status Dot */}
                     <div className="flex-shrink-0 mt-0.5">
@@ -400,7 +450,7 @@ export default function DashboardClient({ user, userId, userProgress = [] }) {
 
                     {/* Step Details */}
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-bold text-zinc-900 dark:text-white leading-snug">
+                      <h4 className="text-sm font-bold text-zinc-900 dark:text-white leading-snug group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                         {stepItem.name}
                       </h4>
                       <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
@@ -413,8 +463,27 @@ export default function DashboardClient({ user, userId, userProgress = [] }) {
                             </span>
                           </span>
                         )}
-                        {isLocked && "Locked · unlock after current step"}
+                        {!isCompleted && !isInProgress && (
+                          <span className="inline-flex items-center gap-1">
+                            {stepWeeks}
+                            {requiresSubmission && (
+                              <span className="ml-1.5 inline-flex items-center gap-0.5 text-[10px] font-bold text-amber-500 dark:text-amber-400">
+                                <svg viewBox="0 0 24 24" fill="currentColor" className="w-2.5 h-2.5">
+                                  <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                                </svg>
+                                GitHub required
+                              </span>
+                            )}
+                          </span>
+                        )}
                       </p>
+                    </div>
+
+                    {/* Chevron arrow */}
+                    <div className="shrink-0 text-zinc-400 dark:text-zinc-600 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors mt-0.5">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                        <polyline points="9 18 15 12 9 6" />
+                      </svg>
                     </div>
                   </div>
                 );
@@ -536,5 +605,19 @@ export default function DashboardClient({ user, userId, userProgress = [] }) {
 
       </div>
     </div>
+
+    {/* Step Detail Modal - rendered as a portal-like overlay */}
+    {selectedStep && (
+      <StepDetailModal
+        step={selectedStep}
+        status={
+          progressData.find(r => r.roadmap_step_id === selectedStep.id)?.status || 'not_started'
+        }
+        fieldSlug={chosenFieldId}
+        onClose={handleModalClose}
+        onComplete={handleStepComplete}
+      />
+    )}
+    </>
   );
 }

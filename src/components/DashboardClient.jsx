@@ -1,49 +1,12 @@
 "use client";
 
-import React, { useState, useTransition, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { fieldsData } from "@/data/fieldsData";
 import { updateStepProgress } from "@/actions/progress";
 import StepDetailModal from "@/components/StepDetailModal";
 
-// ─── Sample content for demo steps ─────────────────────────────────────────
-// In production this data comes from the `roadmap_steps` DB table (resources JSONB,
-// project_instructions TEXT, requires_submission BOOLEAN). For now we seed the
-// first 3 steps of every field with realistic content so the modal is demonstrable.
-const STEP_ENRICHMENTS = {
-  // Slot 0 — Step 1 of any field
-  0: {
-    resources: [
-      { title: 'FreeCodeCamp Full Beginner Course (YouTube)', url: 'https://www.youtube.com/c/freecodecamp', type: 'video' },
-      { title: 'MDN Web Docs — Getting Started', url: 'https://developer.mozilla.org/en-US/docs/Learn', type: 'docs' },
-      { title: 'GeeksForGeeks — Step 1 Guide', url: 'https://www.geeksforgeeks.org/', type: 'article' },
-    ],
-    project_instructions: `## Your First Project\n\nBuild a **beginner project** that demonstrates your understanding of this step's core concepts.\n\n### Requirements\n\n- At minimum 50 lines of original code\n- A clear README explaining what the project does\n- The code must run without errors\n\n### Tips\n\n- Start small and iterate. Don't try to build everything at once.\n- Use the resources above before diving in.\n- Push to GitHub and keep commits frequent — recruiters look at commit history!\n\n### Submission\n\nPaste your **public GitHub repository URL** below to unlock this step.`,
-    requires_submission: true,
-  },
-  // Slot 1 — Step 2
-  1: {
-    resources: [
-      { title: 'Official Documentation — Deep Dive', url: 'https://developer.mozilla.org/', type: 'docs' },
-      { title: 'Traversy Media — Crash Course', url: 'https://www.youtube.com/@TraversyMedia', type: 'video' },
-      { title: 'Dev.to — Practical Guide', url: 'https://dev.to/', type: 'article' },
-    ],
-    project_instructions: `## Intermediate Project\n\nNow that you have the basics, it's time to build something **more complex**.\n\n### What to Build\n\n1. Pick a real-world problem relevant to your field\n2. Apply the concepts from Step 2 to solve it\n3. Document your approach in the README\n\n### Checklist\n\n- [ ] Core functionality working\n- [ ] Code is commented and readable\n- [ ] README has setup instructions\n- [ ] At least 2 commits pushed to GitHub\n\n> **Pro tip:** Indian companies like Infosys, Wipro, and TCS love seeing practical GitHub projects. This matters.`,
-    requires_submission: false,
-  },
-  // Slot 2 — Step 3
-  2: {
-    resources: [
-      { title: 'MIT OpenCourseWare — Advanced Material', url: 'https://ocw.mit.edu/', type: 'docs' },
-      { title: 'The Coding Train — Advanced Tutorial', url: 'https://www.youtube.com/@TheCodingTrain', type: 'video' },
-      { title: 'Medium — In-depth Technical Article', url: 'https://medium.com/topic/programming', type: 'article' },
-    ],
-    project_instructions: `## Advanced Step Project\n\nThis step is where beginners become **engineers**. The project here should be production-quality.\n\n### Requirements\n\n- The project must solve a real, non-trivial problem\n- Include unit tests (or at least manual test cases documented in README)\n- Write a proper \`CONTRIBUTING.md\` and \`LICENSE\` file\n\n### Architecture Notes\n\n\`\`\`\nProject/\n├── src/           # Source files\n├── tests/         # Test suite\n├── README.md      # Usage guide\n└── package.json   # Or equivalent\n\`\`\`\n\nPush to a **public GitHub repo** and paste the link below to unlock this step.`,
-    requires_submission: true,
-  },
-}
-
-export default function DashboardClient({ user, userId, userProgress = [] }) {
+export default function DashboardClient({ user, userId, userProgress = [], roadmapSteps = [] }) {
   // Extract user details
   const firstName = user?.full_name ? user.full_name.trim().split(/\s+/)[0] : "student";
   const chosenFieldId = user?.chosen_field_id;
@@ -83,7 +46,6 @@ export default function DashboardClient({ user, userId, userProgress = [] }) {
 
   // Seed state from the server-side-fetched prop; updates optimistically on step click
   const [progressData, setProgressData] = useState(userProgress);
-  const [isPending, startTransition] = useTransition();
 
   // AI Advisor state
   const [advisorQuestion, setAdvisorQuestion] = useState('');
@@ -96,20 +58,20 @@ export default function DashboardClient({ user, userId, userProgress = [] }) {
   // Opens the modal with the enriched step object
   const handleStepClick = useCallback((stepItem, stepIndex, stepRow) => {
     if (!chosenFieldId) return
-    const enrichment = STEP_ENRICHMENTS[stepIndex] || {}
+    const dbStep = roadmapSteps.find(s => s.step_number === stepIndex + 1)
     setSelectedStep({
       // Core step info from fieldsData
       id: stepItem.id || stepItem.name,
       name: stepItem.name,
       meta: stepItem.meta,
-      // Resources & instructions: prefer DB values, fall back to sample enrichment
-      resources: stepItem.resources ?? enrichment.resources ?? [],
-      project_instructions: stepItem.project_instructions ?? enrichment.project_instructions ?? null,
-      requires_submission: stepItem.requires_submission ?? enrichment.requires_submission ?? false,
+      // Resources & instructions: prefer DB values
+      resources: dbStep?.resources || [],
+      project_instructions: dbStep?.project_instructions || null,
+      requires_submission: dbStep?.requires_submission || false,
       // Any existing submission URL stored in personal_note
       personal_note: stepRow?.personal_note || '',
     })
-  }, [chosenFieldId])
+  }, [chosenFieldId, roadmapSteps])
 
   const handleModalClose = useCallback(() => setSelectedStep(null), [])
 
@@ -165,26 +127,32 @@ export default function DashboardClient({ user, userId, userProgress = [] }) {
   const badgesCount = Math.min(4, Math.floor(progressPercent / 25));
 
   const streakData = useMemo(() => {
+    const toISTDateStr = (dateInput) => {
+      const d = new Date(dateInput);
+      const istDate = new Date(d.getTime() + 5.5 * 60 * 60 * 1000);
+      return istDate.toISOString().split("T")[0];
+    };
+
     const completedDates = progressData
       .filter(row => row.completed_at)
-      .map(row => new Date(row.completed_at).toISOString().split("T")[0]);
+      .map(row => toISTDateStr(row.completed_at));
     const uniqueDates = [...new Set(completedDates)].sort((a, b) => new Date(b) - new Date(a));
     
     let currentStreak = 0;
     let bestStreak = 0;
 
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = toISTDateStr(new Date());
     let tempCurrentStreak = 0;
     let checkDate = new Date();
     
     while (true) {
-      const dStr = checkDate.toISOString().split("T")[0];
+      const dStr = toISTDateStr(checkDate);
       if (uniqueDates.includes(dStr)) {
         tempCurrentStreak++;
         checkDate.setDate(checkDate.getDate() - 1);
       } else if (dStr === todayStr) {
         checkDate.setDate(checkDate.getDate() - 1);
-        const yStr = checkDate.toISOString().split("T")[0];
+        const yStr = toISTDateStr(checkDate);
         if (uniqueDates.includes(yStr)) {
           tempCurrentStreak++;
           checkDate.setDate(checkDate.getDate() - 1);
@@ -408,7 +376,7 @@ export default function DashboardClient({ user, userId, userProgress = [] }) {
             </span>
 
             <div className="space-y-3">
-              {field.roadmap.slice(0, 5).map((stepItem, index) => {
+              {field.roadmap.map((stepItem, index) => {
                 const rowId = stepItem.id || stepItem.name;
                 const stepRow = progressData.find(row => row.roadmap_step_id === rowId);
 
@@ -417,9 +385,9 @@ export default function DashboardClient({ user, userId, userProgress = [] }) {
 
                 // Est weeks for current
                 const stepWeeks = stepItem.meta?.split(" • ")[0] || "4 weeks";
-                // Does this step require a GitHub submission? (from DB or sample enrichment)
-                const enrichment = STEP_ENRICHMENTS[index] || {};
-                const requiresSubmission = stepItem.requires_submission ?? enrichment.requires_submission ?? false;
+                // Does this step require a GitHub submission? (from DB)
+                const dbStep = roadmapSteps.find(s => s.step_number === index + 1);
+                const requiresSubmission = dbStep?.requires_submission || false;
 
                 return (
                   <div
@@ -459,7 +427,7 @@ export default function DashboardClient({ user, userId, userProgress = [] }) {
                           <span>
                             In progress &middot; est. {stepWeeks} &middot; Build:{" "}
                             <span className="font-semibold text-indigo-600 dark:text-indigo-400">
-                              {field.projects?.[0]?.name || "Beginner Project"}
+                              {dbStep?.title || field.projects?.[0]?.name || "Beginner Project"}
                             </span>
                           </span>
                         )}

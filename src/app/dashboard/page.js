@@ -53,11 +53,28 @@ export default async function DashboardPage() {
     .select('*')
     .eq('user_id', authUser.id);
 
+  // Fetch all roadmap steps for the user's chosen field from DB
+  let roadmapSteps = [];
+  try {
+    const { data: stepsData, error: stepsError } = await supabase
+      .from('roadmap_steps')
+      .select('*')
+      .eq('field_slug', userRow.chosen_field_id)
+      .order('step_number', { ascending: true });
+
+    if (!stepsError && stepsData) {
+      roadmapSteps = stepsData;
+    }
+  } catch (err) {
+    console.error("Error loading roadmap steps database rows:", err);
+  }
+
   return (
     <DashboardClient
       user={userRow}
       userId={authUser.id}
       userProgress={userProgress || []}
+      roadmapSteps={roadmapSteps}
     />
   );
 }

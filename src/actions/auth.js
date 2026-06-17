@@ -66,16 +66,9 @@ export async function signup(formData) {
 
 export async function signInWithGoogle() {
   const supabase = await createClient()
-  const headersList = await headers()
   
-  // Use x-forwarded-host to handle environments with load balancers, 
-  // fallback to host
-  const host = headersList.get('x-forwarded-host') || headersList.get('host')
-  const protocol = headersList.get('x-forwarded-proto') || 'http'
-  
-  // Pass next=check so the callback route knows to determine the destination
-  // based on the user's onboarding status rather than defaulting to /
-  const redirectUrl = `${protocol}://${host}/auth/callback?next=check`
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  const redirectUrl = `${siteUrl}/auth/callback?next=check`
   
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',

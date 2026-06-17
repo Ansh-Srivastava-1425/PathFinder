@@ -5,6 +5,7 @@ export async function GET(request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   const next = searchParams.get('next') ?? '/'
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
   if (code) {
     const supabase = await createClient()
@@ -35,15 +36,15 @@ export async function GET(request) {
       const forwardedHost = request.headers.get('x-forwarded-host')
       const isLocalEnv = process.env.NODE_ENV === 'development'
       if (isLocalEnv) {
-        return NextResponse.redirect(`${origin}${destination}`)
+        return NextResponse.redirect(`${siteUrl}${destination}`)
       } else if (forwardedHost) {
         return NextResponse.redirect(`https://${forwardedHost}${destination}`)
       } else {
-        return NextResponse.redirect(`${origin}${destination}`)
+        return NextResponse.redirect(`${siteUrl}${destination}`)
       }
     }
   }
 
   // return the user to an error page with instructions
-  return NextResponse.redirect(`${origin}/auth/auth-code-error`)
+  return NextResponse.redirect(`${siteUrl}/auth/auth-code-error`)
 }

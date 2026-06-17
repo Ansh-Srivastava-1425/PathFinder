@@ -151,6 +151,23 @@ const MarkdownComponents = {
 
 // ─── Main Modal Component ─────────────────────────────────────────────────────
 
+const getSalaryRange = (slug) => {
+  switch (slug) {
+    case 'web-development':
+      return '₹4L – ₹25L per year';
+    case 'ai-machine-learning':
+      return '₹6L – ₹35L per year';
+    case 'robotics':
+      return '₹4L – ₹20L per year';
+    case 'vlsi-chip-design':
+      return '₹5L – ₹30L per year';
+    case 'cybersecurity':
+      return '₹5L – ₹28L per year';
+    default:
+      return '₹4L – ₹20L per year';
+  }
+};
+
 /**
  * StepDetailModal
  * 
@@ -237,7 +254,7 @@ export default function StepDetailModal({ step, status, fieldSlug, onClose, onCo
         role="dialog"
         aria-modal="true"
         aria-labelledby="step-modal-title"
-        className="fixed inset-y-0 right-0 z-50 flex flex-col w-full max-w-xl bg-zinc-900 border-l border-zinc-800/80 shadow-2xl overflow-y-auto"
+        className="fixed inset-0 sm:inset-y-0 sm:right-0 sm:left-auto z-50 flex flex-col w-full h-full sm:h-auto sm:max-w-xl bg-zinc-900 border-l border-zinc-800/80 shadow-2xl overflow-y-auto"
         style={{ animation: 'slideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1)' }}
       >
         {/* ── Section A: Header ── */}
@@ -255,6 +272,10 @@ export default function StepDetailModal({ step, status, fieldSlug, onClose, onCo
             >
               {step?.name}
             </h2>
+            <div className="text-[11px] text-zinc-400 mt-1 flex items-center gap-1">
+              <span>🇮🇳 Est. Salary:</span>
+              <span className="font-semibold text-emerald-400">{getSalaryRange(fieldSlug)}</span>
+            </div>
           </div>
           <button
             onClick={onClose}
@@ -283,16 +304,23 @@ export default function StepDetailModal({ step, status, fieldSlug, onClose, onCo
                         href={res.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all group hover:opacity-90 ${cfg.colorClass}`}
+                        className={`w-full flex items-center gap-3 p-3.5 rounded-xl border transition-all group hover:opacity-90 ${cfg.colorClass}`}
                       >
                         <span className="shrink-0">{cfg.icon}</span>
                         <span className="flex-1 min-w-0">
                           <span className="block text-sm font-semibold text-white group-hover:underline underline-offset-2 truncate">
                             {res.title}
                           </span>
-                          <span className={`inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border ${cfg.badgeClass}`}>
-                            {res.type}
-                          </span>
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border ${cfg.badgeClass}`}>
+                              {res.type}
+                            </span>
+                            {res.label && (
+                              <span className="text-xs font-semibold text-zinc-300">
+                                {res.label}
+                              </span>
+                            )}
+                          </div>
                         </span>
                         <ExternalLinkIcon />
                       </a>
@@ -326,7 +354,7 @@ export default function StepDetailModal({ step, status, fieldSlug, onClose, onCo
               </h3>
               <div className="rounded-xl border border-zinc-800/60 bg-zinc-950/40 px-5 py-4">
                 <ReactMarkdown components={MarkdownComponents}>
-                  {step.project_instructions}
+                  {step.project_instructions?.replace(/\\n/g, '\n')}
                 </ReactMarkdown>
               </div>
             </section>

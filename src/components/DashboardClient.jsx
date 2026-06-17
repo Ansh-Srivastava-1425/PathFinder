@@ -1,10 +1,17 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { fieldsData } from "@/data/fieldsData";
 import { updateStepProgress } from "@/actions/progress";
 import StepDetailModal from "@/components/StepDetailModal";
+
+const BADGES = [
+  { id: 1, label: "First Steps",   emoji: "🌱", threshold: 25 },
+  { id: 2, label: "Halfway Hero",  emoji: "⚡", threshold: 50 },
+  { id: 3, label: "Almost There",  emoji: "🔥", threshold: 75 },
+  { id: 4, label: "Path Complete", emoji: "🏆", threshold: 100 },
+]
 
 export default function DashboardClient({ user, userId, userProgress = [], roadmapSteps = [] }) {
   // Extract user details
@@ -47,6 +54,11 @@ export default function DashboardClient({ user, userId, userProgress = [], roadm
   // Seed state from the server-side-fetched prop; updates optimistically on step click
   const [progressData, setProgressData] = useState(userProgress);
 
+  // States for animations & skeletons
+  const [recentlyCompletedStepId, setRecentlyCompletedStepId] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [animatedProgress, setAnimatedProgress] = useState(0);
+
   // AI Advisor state
   const [advisorQuestion, setAdvisorQuestion] = useState('');
   const [advisorResponse, setAdvisorResponse] = useState('');
@@ -77,6 +89,11 @@ export default function DashboardClient({ user, userId, userProgress = [], roadm
 
   // Optimistic update called by the modal after a successful action
   const handleStepComplete = useCallback((stepId) => {
+    setRecentlyCompletedStepId(stepId);
+    setTimeout(() => {
+      setRecentlyCompletedStepId(null);
+    }, 1500);
+
     setProgressData((prev) => {
       const exists = prev.find((r) => r.roadmap_step_id === stepId)
       if (exists) {
@@ -104,11 +121,14 @@ export default function DashboardClient({ user, userId, userProgress = [], roadm
     if (!advisorQuestion.trim()) return;
     setAdvisorLoading(true);
     setAdvisorResponse('');
+
+    const systemPrompt = `You are PathFinder AI, a career guidance advisor for Indian engineering students. \nYou are advising a student with the following profile:\n- Chosen field: ${fieldName}\n- Current roadmap step: ${currentStepTitle}\n- Overall progress: ${progressPercentage}%\n- Current streak: ${streakDays} days\n\nGive advice that is specific to their field and current step. \nReference Indian job market context where relevant — mention companies like \nTCS, Infosys, Flipkart, Razorpay, ISRO, or startups depending on the field.\nKeep responses concise, practical, and motivating.\nIf asked about salaries, give INR figures.\nNever give generic advice — always tie it back to their current step and field.`;
+
     try {
       const response = await fetch('/api/advisor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: advisorQuestion })
+        body: JSON.stringify({ question: advisorQuestion, systemPrompt })
       });
       const data = await response.json();
       setAdvisorResponse(data.reply);
@@ -125,6 +145,8 @@ export default function DashboardClient({ user, userId, userProgress = [], roadm
   const progressPercent = totalRoadmapSteps > 0 ? Math.round((completedSteps / totalRoadmapSteps) * 100) : 0;
   const derivedTimeLeft = Math.round(totalWeeks * (1 - progressPercent / 100));
   const badgesCount = Math.min(4, Math.floor(progressPercent / 25));
+  const progressPercentage = progressPercent;
+  const earnedBadges = BADGES.filter(b => progressPercentage >= b.threshold);
 
   const streakData = useMemo(() => {
     const toISTDateStr = (dateInput) => {
@@ -184,8 +206,33 @@ export default function DashboardClient({ user, userId, userProgress = [], roadm
     return { currentStreak, bestStreak, uniqueDates };
   }, [progressData]);
 
-  // Weekly streak days setup (Mon - Sun)
-  const streakDays = [
+  const fieldName = field?.name || "None";
+  const currentStep = field?.roadmap?.find((stepItem) => {
+    const rowId = stepItem.id || stepItem.name;
+    const stepRow = progressData.find(row => row.roadmap_step_id === rowId);
+    return stepRow?.status !== "completed";
+  });
+  const currentStepTitle = currentStep?.name || "None";
+  const streakDays = streakData.currentStreak;
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!isLoading) {
+      const timer = setTimeout(() => {
+        setAnimatedProgress(progressPercentage);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [progressPercentage, isLoading]);
+
+  // Weekly calendar streak days setup (Mon - Sun)
+  const calendarStreakDays = [
     { label: "M", value: 1, name: "Monday" },
     { label: "T", value: 2, name: "Tuesday" },
     { label: "W", value: 3, name: "Wednesday" },
@@ -252,58 +299,114 @@ export default function DashboardClient({ user, userId, userProgress = [], roadm
 
         {/* SECTION 2: Stats Row */}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {/* Progress Card */}
-          <div className="bg-white dark:bg-zinc-900/50 border border-zinc-200/80 dark:border-zinc-800/80 p-5 rounded-2xl shadow-sm transition-colors duration-300">
-            <span className="text-[10px] font-bold tracking-wider uppercase text-zinc-400 dark:text-zinc-500 block">
-              Progress
-            </span>
-            <span className="text-2xl font-extrabold text-zinc-950 dark:text-white mt-1 block">
-              {progressPercent}%
-            </span>
-            <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 block mt-1">
-              {completedSteps} of {totalRoadmapSteps} steps done
-            </span>
-          </div>
+          {isLoading ? (
+            <>
+              {/* Progress Card Skeleton */}
+              <div className="bg-zinc-200 dark:bg-zinc-800 animate-gray-pulse h-[108px] rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50" />
+              {/* Streak Card Skeleton */}
+              <div className="bg-zinc-200 dark:bg-zinc-800 animate-gray-pulse h-[108px] rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50" />
+              {/* Time Left Card Skeleton */}
+              <div className="bg-zinc-200 dark:bg-zinc-800 animate-gray-pulse h-[108px] rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50" />
+              {/* Badges Card Skeleton */}
+              <div className="bg-zinc-200 dark:bg-zinc-800 animate-gray-pulse h-[148px] rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50" />
+            </>
+          ) : (
+            <>
+              {/* Progress Card */}
+              <div className="bg-white dark:bg-zinc-900/50 border border-zinc-200/80 dark:border-zinc-800/80 p-5 rounded-2xl shadow-sm transition-colors duration-300">
+                <span className="text-[10px] font-bold tracking-wider uppercase text-zinc-400 dark:text-zinc-500 block">
+                  Progress
+                </span>
+                <span className="text-2xl font-extrabold text-zinc-950 dark:text-white mt-1 block">
+                  {progressPercent}%
+                </span>
+                <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 block mt-1">
+                  {completedSteps} of {totalRoadmapSteps} steps done
+                </span>
+              </div>
 
-          {/* Streak Card */}
-          <div className="bg-white dark:bg-zinc-900/50 border border-zinc-200/80 dark:border-zinc-800/80 p-5 rounded-2xl shadow-sm transition-colors duration-300">
-            <span className="text-[10px] font-bold tracking-wider uppercase text-zinc-400 dark:text-zinc-500 block">
-              Streak
-            </span>
-            <span className="text-2xl font-extrabold text-zinc-950 dark:text-white mt-1 block">
-              {streakData.currentStreak} days
-            </span>
-            <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 block mt-1">
-              Best: {streakData.bestStreak} days
-            </span>
-          </div>
+              {/* Streak Card */}
+              <div className="bg-white dark:bg-zinc-900/50 border border-zinc-200/80 dark:border-zinc-800/80 p-5 rounded-2xl shadow-sm transition-colors duration-300">
+                <span className="text-[10px] font-bold tracking-wider uppercase text-zinc-400 dark:text-zinc-500 block">
+                  Streak
+                </span>
+                <span className="text-2xl font-extrabold text-zinc-950 dark:text-white mt-1 block">
+                  {streakData.currentStreak} days
+                </span>
+                <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 block mt-1">
+                  Best: {streakData.bestStreak} days
+                </span>
+              </div>
 
-          {/* Time Left Card */}
-          <div className="bg-white dark:bg-zinc-900/50 border border-zinc-200/80 dark:border-zinc-800/80 p-5 rounded-2xl shadow-sm transition-colors duration-300">
-            <span className="text-[10px] font-bold tracking-wider uppercase text-zinc-400 dark:text-zinc-500 block">
-              Time Left
-            </span>
-            <span className="text-2xl font-extrabold text-zinc-950 dark:text-white mt-1 block">
-              ~{field ? derivedTimeLeft : 0} wks
-            </span>
-            <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 block mt-1">
-              Estimated path duration
-            </span>
-          </div>
+              {/* Time Left Card */}
+              <div className="bg-white dark:bg-zinc-900/50 border border-zinc-200/80 dark:border-zinc-800/80 p-5 rounded-2xl shadow-sm transition-colors duration-300">
+                <span className="text-[10px] font-bold tracking-wider uppercase text-zinc-400 dark:text-zinc-500 block">
+                  Time Left
+                </span>
+                <span className="text-2xl font-extrabold text-zinc-950 dark:text-white mt-1 block">
+                  ~{field ? derivedTimeLeft : 0} wks
+                </span>
+                <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 block mt-1">
+                  Estimated path duration
+                </span>
+              </div>
 
-          {/* Badges Card */}
-          <div className="bg-white dark:bg-zinc-900/50 border border-zinc-200/80 dark:border-zinc-800/80 p-5 rounded-2xl shadow-sm transition-colors duration-300">
-            <span className="text-[10px] font-bold tracking-wider uppercase text-zinc-400 dark:text-zinc-500 block">
-              Badges
-            </span>
-            <span className="text-2xl font-extrabold text-zinc-950 dark:text-white mt-1 block">
-              {badgesCount}
-            </span>
-            <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 block mt-1">
-              Milestones earned
-            </span>
-          </div>
+              {/* Badges Card */}
+              <div className="bg-white dark:bg-zinc-900/50 border border-zinc-200/80 dark:border-zinc-800/80 p-5 rounded-2xl shadow-sm transition-colors duration-300">
+                <span className="text-[10px] font-bold tracking-wider uppercase text-zinc-400 dark:text-zinc-500 block mb-3">
+                  Badges
+                </span>
+                <div className="grid grid-cols-2 gap-2">
+                  {BADGES.map((b) => {
+                    const isEarned = progressPercentage >= b.threshold;
+                    return (
+                      <div
+                        key={b.id}
+                        className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all duration-300 relative overflow-hidden ${
+                          isEarned
+                            ? "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white"
+                            : "bg-zinc-100/30 dark:bg-zinc-900/10 border-zinc-200/20 dark:border-zinc-800/20 opacity-40 grayscale"
+                        }`}
+                      >
+                        <span className="text-3xl select-none">
+                          {b.emoji}
+                        </span>
+                        <span className="text-[9px] font-bold text-center mt-1 leading-tight text-zinc-700 dark:text-zinc-300">
+                          {b.label}
+                        </span>
+                        {!isEarned && (
+                          <span className="absolute inset-0 flex items-center justify-center text-sm select-none bg-zinc-950/15 dark:bg-black/35">
+                            🔒
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          )}
         </div>
+
+        {/* Empty State for 0% Progress */}
+        {progressPercentage === 0 && (
+          <div className="bg-gradient-to-r from-indigo-500/5 to-purple-500/5 dark:from-indigo-950/10 dark:to-purple-950/10 border border-indigo-200/50 dark:border-indigo-900/40 p-6 rounded-2xl text-center space-y-3 transition-colors duration-300">
+            <h3 className="text-base font-bold text-zinc-900 dark:text-white">
+              Your journey starts here 🚀
+            </h3>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              You haven't completed any steps yet. Ready to take your first step?
+            </p>
+            <button
+              onClick={() => {
+                document.getElementById("roadmap-section")?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="inline-flex items-center justify-center rounded-xl bg-indigo-600 hover:bg-indigo-500 dark:bg-indigo-500 dark:hover:bg-indigo-400 px-4 py-2 text-sm font-bold text-white shadow-md shadow-indigo-900/10 transition-colors cursor-pointer"
+            >
+              Start Step 1
+            </button>
+          </div>
+        )}
 
         {/* SECTION 3: Field & Progress Card */}
         {field ? (
@@ -329,7 +432,13 @@ export default function DashboardClient({ user, userId, userProgress = [], roadm
             {/* Horizontal progress bar */}
             <div className="space-y-2">
               <div className="relative h-2.5 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-                <div className="absolute top-0 left-0 h-full bg-indigo-600 dark:bg-indigo-500 rounded-full transition-all duration-300" style={{ width: `${progressPercent}%` }} />
+                <div
+                  className="absolute top-0 left-0 h-full bg-indigo-600 dark:bg-indigo-500 rounded-full"
+                  style={{
+                    width: `${animatedProgress}%`,
+                    transition: 'width 1s ease-in-out'
+                  }}
+                />
               </div>
               
               {/* Milestones labels */}
@@ -369,8 +478,20 @@ export default function DashboardClient({ user, userId, userProgress = [], roadm
         )}
 
         {/* SECTION 4: Roadmap Steps */}
-        {field && field.roadmap && (
+        {isLoading ? (
           <div className="space-y-3">
+            <span className="text-[10px] font-bold tracking-[0.15em] uppercase text-zinc-400 dark:text-zinc-500 block">
+              Your roadmap
+            </span>
+            <div className="space-y-3">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="bg-zinc-200 dark:bg-zinc-800 animate-gray-pulse h-[74px] rounded-xl border border-zinc-200/50 dark:border-zinc-800/50" />
+              ))}
+            </div>
+          </div>
+        ) : (
+          field && field.roadmap && (
+            <div id="roadmap-section" className="space-y-3">
             <span className="text-[10px] font-bold tracking-[0.15em] uppercase text-zinc-400 dark:text-zinc-500 block">
               Your roadmap
             </span>
@@ -397,12 +518,16 @@ export default function DashboardClient({ user, userId, userProgress = [], roadm
                     aria-label={`Open step: ${stepItem.name}`}
                     onClick={() => handleStepClick(stepItem, index, stepRow)}
                     onKeyDown={(e) => e.key === 'Enter' && handleStepClick(stepItem, index, stepRow)}
-                    className="flex items-start gap-4 p-4 rounded-xl border bg-white dark:bg-zinc-900/50 shadow-sm transition-all duration-200 border-zinc-200 dark:border-zinc-800 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-md cursor-pointer group"
+                    className={`flex items-start gap-4 p-4 rounded-xl border bg-white dark:bg-zinc-900/50 shadow-sm transition-all duration-200 border-zinc-200 dark:border-zinc-800 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-md cursor-pointer group ${
+                      recentlyCompletedStepId === rowId ? 'animate-complete-pulse border-green-500 dark:border-green-500' : ''
+                    }`}
                   >
                     {/* Status Dot */}
                     <div className="flex-shrink-0 mt-0.5">
                       {isCompleted ? (
-                        <div className="w-6 h-6 rounded-full bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center text-white">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white transition-colors duration-300 ${
+                          recentlyCompletedStepId === rowId ? 'bg-green-600 dark:bg-green-500' : 'bg-indigo-600 dark:bg-indigo-500'
+                        }`}>
                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                           </svg>
@@ -427,7 +552,7 @@ export default function DashboardClient({ user, userId, userProgress = [], roadm
                           <span>
                             In progress &middot; est. {stepWeeks} &middot; Build:{" "}
                             <span className="font-semibold text-indigo-600 dark:text-indigo-400">
-                              {dbStep?.title || field.projects?.[0]?.name || "Beginner Project"}
+                              {roadmapSteps.find(s => s.step_number === index + 1)?.title || "Project"}
                             </span>
                           </span>
                         )}
@@ -468,7 +593,8 @@ export default function DashboardClient({ user, userId, userProgress = [], roadm
               </Link>
             </div>
           </div>
-        )}
+        )
+      )}
 
         {/* SECTION 5: Weekly Streak */}
         <div className="space-y-3">
@@ -477,7 +603,7 @@ export default function DashboardClient({ user, userId, userProgress = [], roadm
           </span>
 
           <div className="flex items-center justify-between gap-2 max-w-sm">
-            {streakDays.map((day) => {
+            {calendarStreakDays.map((day) => {
               const isActive = activeDayValues.includes(day.value);
               const isToday = day.value === currentDayOfWeek;
 
@@ -523,23 +649,23 @@ export default function DashboardClient({ user, userId, userProgress = [], roadm
           </div>
 
           {/* Input row */}
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <input
               id="advisor-question-input"
               type="text"
               value={advisorQuestion}
               onChange={(e) => setAdvisorQuestion(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && !advisorLoading && handleAskAdvisor()}
-              placeholder="Ask me anything about your career path..."
+              placeholder={`Ask me about ${fieldName}, ${currentStepTitle}, jobs, salaries...`}
               disabled={advisorLoading}
-              className="flex-1 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2.5 text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-colors disabled:opacity-60"
+              className="w-full sm:flex-1 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2.5 text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-colors disabled:opacity-60"
             />
             <button
               id="advisor-send-btn"
               type="button"
               onClick={handleAskAdvisor}
               disabled={advisorLoading || !advisorQuestion.trim()}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 dark:bg-indigo-500 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-500 dark:hover:bg-indigo-400 transition-colors min-h-[44px] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 dark:bg-indigo-500 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-500 dark:hover:bg-indigo-400 transition-colors min-h-[44px] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {advisorLoading ? (
                 <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -586,6 +712,25 @@ export default function DashboardClient({ user, userId, userProgress = [], roadm
         onComplete={handleStepComplete}
       />
     )}
+    {/* Dynamic animations and styles */}
+    <style>{`
+      @keyframes grayPulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: .4; }
+      }
+      .animate-gray-pulse {
+        animation: grayPulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+
+      @keyframes completePulse {
+        0% { border-color: rgba(34, 197, 94, 0.4); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+        50% { border-color: rgba(34, 197, 94, 1); box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+        100% { border-color: rgba(34, 197, 94, 0.2); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+      }
+      .animate-complete-pulse {
+        animation: completePulse 1.5s ease-out;
+      }
+    `}</style>
     </>
   );
 }

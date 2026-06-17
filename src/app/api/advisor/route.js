@@ -1,8 +1,9 @@
+export const dynamic = 'force-dynamic'
+
 import Groq from 'groq-sdk';
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-
 export async function POST(req) {
+  const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
   try {
     const { question, systemPrompt } = await req.json();
     const result = await groq.chat.completions.create({

@@ -78,16 +78,26 @@ export default function Navbar() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         setUser(session.user);
-        try {
-          const { data } = await supabase
-            .from("users")
-            .select("full_name")
-            .eq("id", session.user.id)
-            .single();
-          setUserRow(data);
-        } catch (err) {
-          console.error("Error refetching profile on auth change:", err);
+        let fetchedData = null;
+        for (let i = 0; i < 3; i++) {
+          try {
+            const { data } = await supabase
+              .from("users")
+              .select("full_name")
+              .eq("id", session.user.id)
+              .single();
+            if (data) {
+              fetchedData = data;
+              break;
+            }
+          } catch (err) {
+            console.error(`Attempt ${i + 1}: Error refetching profile on auth change:`, err);
+          }
+          if (!fetchedData && i < 2) {
+            await new Promise(resolve => setTimeout(resolve, 800));
+          }
         }
+        setUserRow(fetchedData);
       } else {
         setUser(null);
         setUserRow(null);

@@ -2,13 +2,32 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import { submitWaitlist } from "@/actions/submitWaitlist";
+import { setChosenField } from "@/actions/setChosenField";
 
 export default function FieldDetailClient({ field, slug }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [mentorEmail, setMentorEmail] = useState('');
   const [mentorStatus, setMentorStatus] = useState(null); // null | 'success' | string (error message)
   const [mentorLoading, setMentorLoading] = useState(false);
+  const [isRoadmapLoading, setIsRoadmapLoading] = useState(false);
+  
+  const router = useRouter();
+
+  const handleStartRoadmap = async () => {
+    setIsRoadmapLoading(true);
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      router.push("/auth/signup");
+      return;
+    }
+    
+    await setChosenField(slug);
+  };
 
   const handleMentorSubmit = async (e) => {
     e.preventDefault();
@@ -111,12 +130,17 @@ export default function FieldDetailClient({ field, slug }) {
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-4">
               <button
-                onClick={() => setIsModalOpen(true)}
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-5 py-3 text-sm font-bold text-white hover:bg-indigo-500 transition-colors cursor-pointer"
+                onClick={handleStartRoadmap}
+                disabled={isRoadmapLoading}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-5 py-3 text-sm font-bold text-white hover:bg-indigo-500 transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                </svg>
+                {isRoadmapLoading ? (
+                  <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin flex-shrink-0"></div>
+                ) : (
+                  <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                  </svg>
+                )}
                 Start my roadmap
               </button>
               <button
@@ -431,9 +455,13 @@ export default function FieldDetailClient({ field, slug }) {
             Gain full access to all remaining steps, video tutorials, downloadable reference sheets, and interactive assignments.
           </p>
           <button
-            onClick={() => setIsModalOpen(true)}
-            className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-500 py-3 text-sm font-bold text-white transition-colors cursor-pointer"
+            onClick={handleStartRoadmap}
+            disabled={isRoadmapLoading}
+            className="w-full inline-flex justify-center items-center gap-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 py-3 text-sm font-bold text-white transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
           >
+            {isRoadmapLoading ? (
+              <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin flex-shrink-0"></div>
+            ) : null}
             Unlock full roadmap — free
           </button>
         </div>
@@ -451,9 +479,13 @@ export default function FieldDetailClient({ field, slug }) {
             </p>
           </div>
           <button
-            onClick={() => setIsModalOpen(true)}
-            className="rounded-lg bg-indigo-600 hover:bg-indigo-500 px-5 py-2.5 text-xs sm:text-sm font-bold text-white transition-colors flex-shrink-0 cursor-pointer text-center"
+            onClick={handleStartRoadmap}
+            disabled={isRoadmapLoading}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 px-5 py-2.5 text-xs sm:text-sm font-bold text-white transition-colors flex-shrink-0 cursor-pointer text-center disabled:opacity-70 disabled:cursor-not-allowed"
           >
+            {isRoadmapLoading ? (
+              <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin flex-shrink-0"></div>
+            ) : null}
             Start my roadmap
           </button>
         </div>

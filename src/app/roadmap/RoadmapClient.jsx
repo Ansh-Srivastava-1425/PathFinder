@@ -157,9 +157,9 @@ export default function RoadmapClient({ user, userId, userProgress = [], roadmap
 
       {/* 2. Roadmap Steps - Compact Task List Layout */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 mt-12 space-y-3">
-        {field.roadmap?.map((stepItem, index) => {
-          const stepId = stepItem.id || stepItem.name;
-          const dbStep = roadmapSteps.find((s) => s.step_number === index + 1);
+        {roadmapSteps.map((dbStep, index) => {
+          const stepId = dbStep.id || dbStep.name;
+          const stepItem = { name: dbStep.name, meta: dbStep.meta };
           
           const progressRow = progressData.find((r) => r.roadmap_step_id === stepId);
           const isCompleted = progressRow?.status === "completed";

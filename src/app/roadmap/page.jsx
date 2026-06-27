@@ -2,6 +2,7 @@ import React from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import RoadmapClient from "./RoadmapClient";
+import { fieldsData } from "@/data/fieldsData";
 
 export const metadata = {
   title: "Roadmap — Dishant",
@@ -62,11 +63,55 @@ export default async function RoadmapPage() {
       .eq('field_slug', userRow.chosen_field_id)
       .order('step_number', { ascending: true });
 
-    if (!stepsError && stepsData) {
+    if (!stepsError && stepsData && stepsData.length > 0) {
       roadmapSteps = stepsData;
+    } else {
+      // Roadmap steps do not exist in the DB, so we generate them via API
+      const fieldSlug = userRow.chosen_field_id;
+      const fieldName = fieldsData[fieldSlug]?.name || fieldSlug;
+      
+      const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
+      const host = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL || (process.env.PORT ? `localhost:${process.env.PORT}` : 'localhost:3000');
+      const baseUrl = `${protocol}://${host}`;
+
+      console.log(`Generating roadmap for ${fieldName} via ${baseUrl}/api/generate-roadmap`);
+      
+      const res = await fetch(`${baseUrl}/api/generate-roadmap`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fieldName, fieldSlug })
+      });
+      
+      const aiData = await res.json();
+      
+      if (aiData.steps && Array.isArray(aiData.steps)) {
+        // Map to DB schema
+        const insertData = aiData.steps.map((stepObj, index) => ({
+          field_slug: fieldSlug,
+          step_number: index + 1,
+          name: stepObj.name,
+          meta: stepObj.meta,
+          requires_submission: stepObj.meta?.toLowerCase().includes('project') || false,
+          resources: [],
+          project_instructions: ""
+        }));
+        
+        // Save to Supabase
+        const { data: insertedData, error: insertError } = await supabase
+          .from('roadmap_steps')
+          .insert(insertData)
+          .select();
+          
+        if (!insertError && insertedData) {
+          roadmapSteps = insertedData.sort((a, b) => a.step_number - b.step_number);
+        } else {
+          console.error("Failed to insert generated steps:", insertError);
+          roadmapSteps = insertData; // fallback to pass to UI anyway
+        }
+      }
     }
   } catch (err) {
-    console.error("Error loading roadmap steps database rows:", err);
+    console.error("Error loading or generating roadmap steps:", err);
   }
 
   return (

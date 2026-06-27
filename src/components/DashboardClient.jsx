@@ -586,7 +586,7 @@ export default function DashboardClient({ user, userId, userProgress = [], roadm
             {/* View Full Roadmap Link */}
             <div className="pt-1">
               <Link
-                href="/explore"
+                href="/roadmap"
                 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 transition-colors inline-flex items-center gap-1 min-h-[44px]"
               >
                 View full roadmap →

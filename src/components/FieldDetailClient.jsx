@@ -23,14 +23,15 @@ export default function FieldDetailClient({ field, slug }) {
       console.log("[handleStartRoadmap] 2. Creating Supabase client...");
       const supabase = createClient();
       
-      console.log("[handleStartRoadmap] 3. Fetching user...");
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      console.log("[handleStartRoadmap] 3. Fetching session...");
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      if (userError) {
-        console.error("[handleStartRoadmap] User error:", userError);
+      if (sessionError) {
+        console.error("[handleStartRoadmap] Session error:", sessionError);
       }
       
-      console.log("[handleStartRoadmap] 4. User result:", user ? "found" : "null");
+      const user = session?.user;
+      console.log("[handleStartRoadmap] 4. User result from session:", user ? "found" : "null");
       if (!user) {
         console.log("[handleStartRoadmap] 5. No user found. Redirecting to signup...");
         router.push("/auth/signup");

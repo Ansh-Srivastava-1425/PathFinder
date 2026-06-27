@@ -26,7 +26,11 @@ export default function FieldDetailClient({ field, slug }) {
       return;
     }
     
-    await setChosenField(slug);
+    const result = await setChosenField(slug);
+    if (result?.success) {
+      router.push("/roadmap");
+    }
+    setIsRoadmapLoading(false);
   };
 
   const handleMentorSubmit = async (e) => {

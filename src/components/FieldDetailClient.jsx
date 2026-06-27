@@ -18,19 +18,24 @@ export default function FieldDetailClient({ field, slug }) {
 
   const handleStartRoadmap = async () => {
     setIsRoadmapLoading(true);
-    const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      router.push("/auth/signup");
-      return;
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        router.push("/auth/signup");
+        return;
+      }
+      
+      const result = await setChosenField(slug);
+      if (result?.success) {
+        router.push("/roadmap");
+      }
+    } catch (err) {
+      console.error("Error starting roadmap:", err);
+    } finally {
+      setIsRoadmapLoading(false);
     }
-    
-    const result = await setChosenField(slug);
-    if (result?.success) {
-      router.push("/roadmap");
-    }
-    setIsRoadmapLoading(false);
   };
 
   const handleMentorSubmit = async (e) => {

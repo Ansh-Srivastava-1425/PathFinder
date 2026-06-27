@@ -155,8 +155,8 @@ export default function RoadmapClient({ user, userId, userProgress = [], roadmap
         </div>
       </header>
 
-      {/* 2. Roadmap Steps - Accordion Layout */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 mt-12 space-y-6">
+      {/* 2. Roadmap Steps - Compact Task List Layout */}
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 mt-12 space-y-3">
         {field.roadmap?.map((stepItem, index) => {
           const stepId = stepItem.id || stepItem.name;
           const dbStep = roadmapSteps.find((s) => s.step_number === index + 1);
@@ -187,24 +187,24 @@ export default function RoadmapClient({ user, userId, userProgress = [], roadmap
           return (
             <section 
               key={stepId} 
-              className={`w-full rounded-3xl border transition-all duration-300 overflow-hidden ${
+              className={`w-full rounded-2xl border transition-all duration-300 overflow-hidden ${
                 isCompleted 
                   ? "bg-white/50 dark:bg-zinc-900/30 border-zinc-200/50 dark:border-zinc-800/50" 
                   : index === completedStepsCount
-                    ? "bg-white dark:bg-zinc-900 border-indigo-200 dark:border-indigo-900/60 shadow-lg shadow-indigo-900/5 ring-1 ring-indigo-50 dark:ring-indigo-900/20"
+                    ? "bg-white dark:bg-zinc-900 border-indigo-200 dark:border-indigo-900/60 shadow-sm shadow-indigo-900/5 ring-1 ring-indigo-50 dark:ring-indigo-900/20"
                     : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm hover:shadow-md"
-              } ${isRecentlyCompleted ? "scale-[1.02] shadow-2xl shadow-emerald-500/20 ring-4 ring-emerald-500 transition-transform" : ""}`}
+              } ${isRecentlyCompleted ? "scale-[1.01] shadow-lg shadow-emerald-500/10 ring-2 ring-emerald-500 transition-transform" : ""}`}
             >
               
-              {/* Accordion Header (Clickable) */}
+              {/* Accordion Header (Clickable - Compact) */}
               <div 
                 onClick={() => toggleExpand(stepId)}
-                className={`cursor-pointer p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/30 select-none ${
-                  isExpanded ? "border-b border-zinc-100 dark:border-zinc-800/60 pb-6 sm:pb-8" : ""
+                className={`cursor-pointer p-4 flex items-center justify-between gap-4 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/30 select-none ${
+                  isExpanded ? "border-b border-zinc-100 dark:border-zinc-800/60" : ""
                 }`}
               >
-                <div className="flex items-center gap-5">
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-2xl shadow-sm shrink-0 ${
+                <div className="flex items-center gap-3 w-full">
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shadow-sm shrink-0 ${
                     isCompleted 
                       ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-400" 
                       : index === completedStepsCount
@@ -213,13 +213,13 @@ export default function RoadmapClient({ user, userId, userProgress = [], roadmap
                   }`}>
                     {index + 1}
                   </div>
-                  <div>
-                    <h2 className="text-xl sm:text-2xl font-extrabold text-zinc-900 dark:text-white leading-tight">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3 w-full">
+                    <h2 className="text-base font-semibold text-zinc-900 dark:text-white leading-tight">
                       {stepItem.name}
                     </h2>
                     {stepItem.meta && (
-                      <p className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 mt-1.5 flex items-center gap-1.5">
-                        <svg className="w-4 h-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 flex items-center gap-1 mt-0.5 sm:mt-0">
+                        <svg className="w-3.5 h-3.5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         {stepItem.meta}
@@ -228,38 +228,38 @@ export default function RoadmapClient({ user, userId, userProgress = [], roadmap
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4">
-                  <div className={`inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold border ${statusColor}`}>
+                <div className="flex items-center justify-end shrink-0 gap-3">
+                  <div className={`hidden sm:inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] sm:text-xs font-semibold border ${statusColor}`}>
                     <span>{icon}</span>
                     {statusText}
                   </div>
-                  <div className="text-zinc-400 dark:text-zinc-500 flex items-center justify-center w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800">
-                    <svg className={`w-5 h-5 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="text-zinc-400 dark:text-zinc-500 flex items-center justify-center w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 shrink-0">
+                    <svg className={`w-4 h-4 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
                     </svg>
                   </div>
                 </div>
               </div>
 
-              {/* Expanded Content */}
+              {/* Expanded Content (Compact) */}
               {isExpanded && (
-                <div className="p-6 sm:p-8 pt-8 space-y-10 animate-in slide-in-from-top-4 fade-in duration-300">
+                <div className="p-4 pt-5 space-y-6 animate-in slide-in-from-top-2 fade-in duration-200">
                   
                   {/* AI Generation Trigger */}
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-zinc-50 dark:bg-zinc-900/50 p-5 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80">
                     <div>
-                      <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-1">Interactive Learning Guide</h3>
-                      <p className="text-sm text-zinc-500 dark:text-zinc-400">Expand this step with AI to get a structured breakdown of skills, resources, and projects.</p>
+                      <h3 className="text-sm font-semibold text-zinc-900 dark:text-white mb-0.5">Interactive Learning Guide</h3>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400">Expand this step with AI to get a structured breakdown of skills, resources, and projects.</p>
                     </div>
                     {!aiContent[stepId] && (
                       <button
                         onClick={() => handleExpandAI(stepId, stepItem.name)}
                         disabled={aiLoading[stepId]}
-                        className="w-full sm:w-auto shrink-0 inline-flex justify-center items-center gap-2 text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors bg-indigo-50 dark:bg-indigo-950/60 px-5 py-3 rounded-xl border border-indigo-200 dark:border-indigo-900/50 shadow-sm disabled:opacity-70"
+                        className="w-full sm:w-auto shrink-0 inline-flex justify-center items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors bg-indigo-50 dark:bg-indigo-950/60 px-3 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-900/50 shadow-sm disabled:opacity-70"
                       >
                         {aiLoading[stepId] ? (
                           <>
-                            <div className="w-4 h-4 border-2 border-indigo-600/30 dark:border-indigo-400/30 border-t-indigo-600 dark:border-t-indigo-400 rounded-full animate-spin"></div>
+                            <div className="w-3 h-3 border-2 border-indigo-600/30 dark:border-indigo-400/30 border-t-indigo-600 dark:border-t-indigo-400 rounded-full animate-spin"></div>
                             Analyzing...
                           </>
                         ) : (
@@ -273,17 +273,17 @@ export default function RoadmapClient({ user, userId, userProgress = [], roadmap
 
                   {/* The AI Content JSON Rendering */}
                   {aiContent[stepId] ? (
-                    <div className="space-y-10">
+                    <div className="space-y-6">
                       
                       {/* Skills Grid */}
                       {aiContent[stepId].skills?.length > 0 && (
                         <div>
-                          <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-3 uppercase tracking-wider flex items-center gap-2">
+                          <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 mb-2 uppercase tracking-wider flex items-center gap-1.5">
                             <span>🎯</span> Skills to Learn
                           </h4>
-                          <div className="flex flex-wrap gap-2.5">
+                          <div className="flex flex-wrap gap-2">
                             {aiContent[stepId].skills.map((skill, i) => (
-                              <span key={i} className="px-3.5 py-1.5 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 text-indigo-700 dark:text-indigo-300 text-sm font-bold rounded-xl shadow-sm">
+                              <span key={i} className="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 text-indigo-700 dark:text-indigo-300 text-xs font-semibold rounded-lg shadow-sm">
                                 {skill}
                               </span>
                             ))}
@@ -294,23 +294,23 @@ export default function RoadmapClient({ user, userId, userProgress = [], roadmap
                       {/* Resources List */}
                       {aiContent[stepId].resources?.length > 0 && (
                         <div>
-                          <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-3 uppercase tracking-wider flex items-center gap-2">
+                          <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 mb-2 uppercase tracking-wider flex items-center gap-1.5">
                             <span>📚</span> Resources
                           </h4>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                             {aiContent[stepId].resources.map((res, i) => {
                               let typeIcon = "🌐";
                               if (res.type?.toLowerCase().includes("youtube")) typeIcon = "📺";
                               if (res.type?.toLowerCase().includes("docs") || res.type?.toLowerCase().includes("document")) typeIcon = "📄";
                               
                               return (
-                                <a key={i} href={res.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 bg-white dark:bg-zinc-950 hover:bg-zinc-50 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-3.5 rounded-xl transition-all group shadow-sm">
-                                  <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-lg shrink-0 group-hover:scale-110 transition-transform">
+                                <a key={i} href={res.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 bg-white dark:bg-zinc-950 hover:bg-zinc-50 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-2.5 rounded-lg transition-all group shadow-sm">
+                                  <div className="w-8 h-8 rounded-md bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-sm shrink-0 group-hover:scale-110 transition-transform">
                                     {typeIcon}
                                   </div>
                                   <div className="flex flex-col overflow-hidden">
-                                    <span className="font-bold text-sm text-zinc-900 dark:text-zinc-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 truncate">{res.name}</span>
-                                    <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">{res.type}</span>
+                                    <span className="font-semibold text-xs text-zinc-900 dark:text-zinc-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 truncate">{res.name}</span>
+                                    <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400">{res.type}</span>
                                   </div>
                                 </a>
                               );
@@ -321,11 +321,11 @@ export default function RoadmapClient({ user, userId, userProgress = [], roadmap
 
                       {/* Project Box */}
                       {aiContent[stepId].project && (
-                        <div className="bg-gradient-to-br from-indigo-50/80 to-zinc-50 dark:from-indigo-950/20 dark:to-zinc-900/50 p-6 sm:p-8 rounded-2xl border border-indigo-100 dark:border-indigo-900/30">
-                          <h4 className="text-lg font-bold text-indigo-900 dark:text-indigo-300 mb-3 flex items-center gap-2">
+                        <div className="bg-gradient-to-br from-indigo-50/80 to-zinc-50 dark:from-indigo-950/20 dark:to-zinc-900/50 p-4 sm:p-5 rounded-xl border border-indigo-100 dark:border-indigo-900/30">
+                          <h4 className="text-sm font-bold text-indigo-900 dark:text-indigo-300 mb-2 flex items-center gap-1.5">
                             <span>🛠️</span> Project to Build
                           </h4>
-                          <p className="text-base text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                          <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
                             {aiContent[stepId].project}
                           </p>
                         </div>
@@ -334,16 +334,16 @@ export default function RoadmapClient({ user, userId, userProgress = [], roadmap
                       {/* Tips List */}
                       {aiContent[stepId].tips?.length > 0 && (
                         <div>
-                          <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-4 uppercase tracking-wider flex items-center gap-2">
+                          <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 mb-3 uppercase tracking-wider flex items-center gap-1.5">
                             <span>💡</span> Pro Tips for India
                           </h4>
-                          <div className="space-y-3">
+                          <div className="space-y-2">
                             {aiContent[stepId].tips.map((tip, i) => (
-                              <div key={i} className="flex items-start gap-4 text-base text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-950 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
-                                <div className="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold text-sm shrink-0 mt-0.5">
+                              <div key={i} className="flex items-start gap-3 text-sm text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-950 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-sm">
+                                <div className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
                                   {i + 1}
                                 </div>
-                                <span className="leading-relaxed">{tip}</span>
+                                <span className="leading-relaxed text-xs sm:text-sm">{tip}</span>
                               </div>
                             ))}
                           </div>
@@ -353,14 +353,14 @@ export default function RoadmapClient({ user, userId, userProgress = [], roadmap
                     </div>
                   ) : (
                     /* Fallback DB Content if AI not expanded yet (show existing project/resources if any) */
-                    <div className="space-y-8 opacity-75">
+                    <div className="space-y-6 opacity-75">
                       {dbStep?.resources && dbStep.resources.length > 0 && (
                         <div>
-                          <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-3 uppercase tracking-wider">📚 Included Resources</h3>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 mb-2 uppercase tracking-wider">📚 Included Resources</h3>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                             {dbStep.resources.map((res, i) => (
-                              <a key={i} href={res.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 p-3 rounded-lg">
-                                <span className="font-semibold text-sm text-zinc-700 dark:text-zinc-300 line-clamp-1">{res.title}</span>
+                              <a key={i} href={res.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 p-2.5 rounded-md">
+                                <span className="font-medium text-xs text-zinc-700 dark:text-zinc-300 line-clamp-1">{res.title}</span>
                               </a>
                             ))}
                           </div>
@@ -368,8 +368,8 @@ export default function RoadmapClient({ user, userId, userProgress = [], roadmap
                       )}
                       {dbStep?.project_instructions && (
                         <div>
-                          <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-2 uppercase tracking-wider">🛠️ Overview</h3>
-                          <div className="text-sm text-zinc-600 dark:text-zinc-400 whitespace-pre-line leading-relaxed">
+                          <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 mb-2 uppercase tracking-wider">🛠️ Overview</h3>
+                          <div className="text-xs text-zinc-600 dark:text-zinc-400 whitespace-pre-line leading-relaxed">
                             {dbStep.project_instructions}
                           </div>
                         </div>
@@ -378,12 +378,12 @@ export default function RoadmapClient({ user, userId, userProgress = [], roadmap
                   )}
 
                   {/* Submission & Action */}
-                  <div className="pt-8 mt-8 border-t border-zinc-100 dark:border-zinc-800/60">
+                  <div className="pt-5 mt-5 border-t border-zinc-100 dark:border-zinc-800/60">
                     {!isCompleted ? (
                       <div>
                         {requiresSubmission && (
-                          <div className="mb-6">
-                            <label htmlFor={`github-${stepId}`} className="block text-base font-bold text-zinc-900 dark:text-zinc-100 mb-3">
+                          <div className="mb-4">
+                            <label htmlFor={`github-${stepId}`} className="block text-xs font-bold text-zinc-900 dark:text-zinc-100 mb-2">
                               GitHub / Project URL <span className="text-red-500">*</span>
                             </label>
                             <input
@@ -392,7 +392,7 @@ export default function RoadmapClient({ user, userId, userProgress = [], roadmap
                               placeholder="https://github.com/your-username/repo"
                               value={submissionUrls[stepId] || ""}
                               onChange={(e) => handleUrlChange(stepId, e.target.value)}
-                              className="w-full rounded-xl bg-white dark:bg-zinc-950 border-2 border-zinc-200 dark:border-zinc-800 px-5 py-4 text-base text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-500 transition-colors"
+                              className="w-full rounded-lg bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-500 transition-colors"
                             />
                           </div>
                         )}
@@ -400,16 +400,16 @@ export default function RoadmapClient({ user, userId, userProgress = [], roadmap
                         <button
                           onClick={() => handleMarkComplete(stepId, requiresSubmission)}
                           disabled={loadingSteps[stepId]}
-                          className="w-full sm:w-auto inline-flex justify-center items-center gap-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 px-8 py-4 text-base font-bold text-white shadow-lg shadow-emerald-600/20 transition-all focus:ring-4 focus:ring-emerald-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-full sm:w-auto inline-flex justify-center items-center gap-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-all focus:ring-2 focus:ring-emerald-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {loadingSteps[stepId] ? (
                             <>
-                              <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
+                              <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                               Saving...
                             </>
                           ) : (
                             <>
-                              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                               </svg>
                               Mark Complete
@@ -420,18 +420,18 @@ export default function RoadmapClient({ user, userId, userProgress = [], roadmap
                     ) : (
                       <div>
                         {submittedUrl && (
-                          <div className="mb-4">
-                            <p className="text-sm font-bold text-zinc-500 dark:text-zinc-400 mb-2 uppercase tracking-wide">Your Submission</p>
-                            <a href={submittedUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-base font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 hover:underline break-all">
-                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <div className="mb-3">
+                            <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 mb-1 uppercase tracking-wide">Your Submission</p>
+                            <a href={submittedUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 hover:underline break-all">
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                               </svg>
                               {submittedUrl}
                             </a>
                           </div>
                         )}
-                        <div className="inline-flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/40 px-4 py-2.5 rounded-xl border border-emerald-200 dark:border-emerald-900/50">
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <div className="inline-flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-900/50 text-xs">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                           </svg>
                           Completed

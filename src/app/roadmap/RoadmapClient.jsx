@@ -16,6 +16,32 @@ export default function RoadmapClient({ user, userId, userProgress = [], roadmap
   // State for Github submission URL inputs
   const [submissionUrls, setSubmissionUrls] = useState({});
   const [loadingSteps, setLoadingSteps] = useState({});
+  const [aiContent, setAiContent] = useState({});
+  const [aiLoading, setAiLoading] = useState({});
+
+  const handleExpandAI = async (stepId, stepName) => {
+    if (aiContent[stepId] || aiLoading[stepId]) return;
+
+    setAiLoading((prev) => ({ ...prev, [stepId]: true }));
+
+    const systemPrompt = `You are a career roadmap expert for Indian engineering students. Give me a detailed learning guide for the step: '${stepName}' in the field of '${field.name}'. Include: 1) What exactly to learn (5-6 bullet points), 2) Best free resources (YouTube channels, websites, docs), 3) A mini project to build, 4) Pro tips for Indian students. Keep it practical and concise.`;
+
+    try {
+      const res = await fetch("/api/advisor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: "Generate detailed learning guide for this step.", systemPrompt }),
+      });
+      const data = await res.json();
+      if (data.reply) {
+        setAiContent((prev) => ({ ...prev, [stepId]: data.reply }));
+      }
+    } catch (error) {
+      console.error("Failed to fetch AI content", error);
+    } finally {
+      setAiLoading((prev) => ({ ...prev, [stepId]: false }));
+    }
+  };
 
   const handleUrlChange = (stepId, value) => {
     setSubmissionUrls((prev) => ({ ...prev, [stepId]: value }));
@@ -226,6 +252,38 @@ export default function RoadmapClient({ user, userId, userProgress = [], roadmap
                     </div>
                   </div>
                 )}
+
+                {/* AI Expansion */}
+                <div className="pt-2">
+                  {!aiContent[stepId] && (
+                    <button
+                      onClick={() => handleExpandAI(stepId, stepItem.name)}
+                      disabled={aiLoading[stepId]}
+                      className="inline-flex items-center gap-2 text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors bg-indigo-50 dark:bg-indigo-950/40 px-4 py-2.5 rounded-xl border border-indigo-100 dark:border-indigo-900/50"
+                    >
+                      {aiLoading[stepId] ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-indigo-600/30 dark:border-indigo-400/30 border-t-indigo-600 dark:border-t-indigo-400 rounded-full animate-spin"></div>
+                          Generating guide...
+                        </>
+                      ) : (
+                        <>
+                          ✨ Expand with AI
+                        </>
+                      )}
+                    </button>
+                  )}
+                  {aiContent[stepId] && (
+                    <div className="bg-indigo-50/50 dark:bg-indigo-950/20 rounded-2xl p-6 sm:p-8 border border-indigo-200/60 dark:border-indigo-800/60 shadow-inner">
+                      <h3 className="text-lg font-bold text-indigo-900 dark:text-indigo-300 mb-4 flex items-center gap-2">
+                        <span className="text-xl">✨</span> AI Learning Guide
+                      </h3>
+                      <div className="text-base text-indigo-950/80 dark:text-indigo-200/80 whitespace-pre-line leading-relaxed prose dark:prose-invert max-w-none">
+                        {aiContent[stepId]}
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 {/* Submission & Action */}
                 {!isCompleted && (

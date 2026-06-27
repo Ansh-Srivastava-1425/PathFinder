@@ -17,23 +17,40 @@ export default function FieldDetailClient({ field, slug }) {
   const router = useRouter();
 
   const handleStartRoadmap = async () => {
+    console.log("[handleStartRoadmap] 1. Button clicked, starting...");
     setIsRoadmapLoading(true);
     try {
+      console.log("[handleStartRoadmap] 2. Creating Supabase client...");
       const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
       
+      console.log("[handleStartRoadmap] 3. Fetching session...");
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error("[handleStartRoadmap] Session error:", sessionError);
+      }
+      
+      console.log("[handleStartRoadmap] 4. Session result:", !!session);
       if (!session) {
+        console.log("[handleStartRoadmap] 5. No session found. Redirecting to signup...");
         router.push("/auth/signup");
         return;
       }
       
+      console.log("[handleStartRoadmap] 6. Calling setChosenField server action with slug:", slug);
       const result = await setChosenField(slug);
+      console.log("[handleStartRoadmap] 7. Server action result:", result);
+      
       if (result?.success) {
+        console.log("[handleStartRoadmap] 8. Success! Redirecting to /roadmap...");
         router.push("/roadmap");
+      } else {
+        console.warn("[handleStartRoadmap] 8b. Server action returned without success:", result);
       }
     } catch (err) {
-      console.error("Error starting roadmap:", err);
+      console.error("[handleStartRoadmap] ERROR caught:", err);
     } finally {
+      console.log("[handleStartRoadmap] 9. Finally block reached, clearing loading state.");
       setIsRoadmapLoading(false);
     }
   };

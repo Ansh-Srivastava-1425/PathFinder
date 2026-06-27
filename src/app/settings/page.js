@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import SettingsClient from '@/components/SettingsClient'
 
 export const metadata = {
-  title: 'Settings — PathFinder',
+  title: 'Settings — Dishant',
   description: 'Manage your profile, account settings, and career roadmap.',
 }
 

@@ -14,20 +14,20 @@ export async function generateMetadata({ params }) {
   const field = fieldsData[slug];
   if (!field) {
     return {
-      title: "Field Not Found - PathFinder",
+      title: "Field Not Found - Dishant",
       openGraph: {
-        title: "Field Not Found - PathFinder",
-        siteName: "PathFinder",
+        title: "Field Not Found - Dishant",
+        siteName: "Dishant",
       },
     };
   }
   return {
-    title: `${field.name} Roadmap & Career Guide - PathFinder`,
+    title: `${field.name} Roadmap & Career Guide - Dishant`,
     description: `Explore the ${field.name} career path in India. Salary range: ${field.stats.entrySalary} to ${field.stats.seniorSalary}. Discover skills, projects, companies, and guidance.`,
     openGraph: {
-      title: `${field.name} Roadmap & Career Guide - PathFinder`,
+      title: `${field.name} Roadmap & Career Guide - Dishant`,
       description: `Explore the ${field.name} career path in India. Salary range: ${field.stats.entrySalary} to ${field.stats.seniorSalary}. Discover skills, projects, companies, and guidance.`,
-      siteName: "PathFinder",
+      siteName: "Dishant",
     },
   };
 }

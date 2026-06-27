@@ -65,7 +65,7 @@ export default function AdminSidebar() {
             </svg>
           </span>
           <div className="leading-tight">
-            <span className="text-sm font-bold text-white tracking-tight">PathFinder</span>
+            <span className="text-sm font-bold text-white tracking-tight">Dishant</span>
             <span className="block text-[10px] font-semibold text-indigo-400 uppercase tracking-widest">Admin</span>
           </div>
         </div>
@@ -121,7 +121,7 @@ export default function AdminSidebar() {
             <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
           </svg>
         </span>
-        <span className="text-xs font-bold text-white tracking-tight">PathFinder Admin</span>
+        <span className="text-xs font-bold text-white tracking-tight">Dishant Admin</span>
         <nav className="ml-auto flex items-center gap-1">
           {NAV_ITEMS.map((item) => {
             const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href)

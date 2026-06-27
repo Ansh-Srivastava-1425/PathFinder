@@ -4,12 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 import RoadmapClient from "./RoadmapClient";
 
 export const metadata = {
-  title: "Roadmap — PathFinder",
+  title: "Roadmap — Dishant",
   description: "Your detailed field roadmap.",
   openGraph: {
-    title: "Roadmap — PathFinder",
+    title: "Roadmap — Dishant",
     description: "Your detailed field roadmap.",
-    siteName: "PathFinder",
+    siteName: "Dishant",
   },
 };
 

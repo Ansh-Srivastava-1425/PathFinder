@@ -122,7 +122,7 @@ export default function DashboardClient({ user, userId, userProgress = [], roadm
     setAdvisorLoading(true);
     setAdvisorResponse('');
 
-    const systemPrompt = `You are PathFinder AI, a career guidance advisor for Indian engineering students. \nYou are advising a student with the following profile:\n- Chosen field: ${fieldName}\n- Current roadmap step: ${currentStepTitle}\n- Overall progress: ${progressPercentage}%\n- Current streak: ${streakDays} days\n\nGive advice that is specific to their field and current step. \nReference Indian job market context where relevant — mention companies like \nTCS, Infosys, Flipkart, Razorpay, ISRO, or startups depending on the field.\nKeep responses concise, practical, and motivating.\nIf asked about salaries, give INR figures.\nNever give generic advice — always tie it back to their current step and field.`;
+    const systemPrompt = `You are Dishant AI, a career guidance advisor for Indian engineering students. \nYou are advising a student with the following profile:\n- Chosen field: ${fieldName}\n- Current roadmap step: ${currentStepTitle}\n- Overall progress: ${progressPercentage}%\n- Current streak: ${streakDays} days\n\nGive advice that is specific to their field and current step. \nReference Indian job market context where relevant — mention companies like \nTCS, Infosys, Flipkart, Razorpay, ISRO, or startups depending on the field.\nKeep responses concise, practical, and motivating.\nIf asked about salaries, give INR figures.\nNever give generic advice — always tie it back to their current step and field.`;
 
     try {
       const response = await fetch('/api/advisor', {
@@ -644,7 +644,7 @@ export default function DashboardClient({ user, userId, userProgress = [], roadm
             </div>
             <div>
               <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Ask your AI advisor</h4>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">Powered by PathFinder AI · India-focused career advice</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">Powered by Dishant AI · India-focused career advice</p>
             </div>
           </div>
 
@@ -685,7 +685,7 @@ export default function DashboardClient({ user, userId, userProgress = [], roadm
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
               </svg>
-              PathFinder AI is thinking…
+              Dishant AI is thinking…
             </div>
           )}
 

@@ -2,7 +2,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import WaitlistClient from '@/components/admin/WaitlistClient'
 
 export const metadata = {
-  title: 'Waitlists — Admin | PathFinder',
+  title: 'Waitlists — Admin | Dishant',
 }
 
 export default async function AdminWaitlistPage() {

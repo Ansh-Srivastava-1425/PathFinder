@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { fieldsData } from "@/data/fieldsData";
 import { updateStepProgress } from "@/actions/progress";
@@ -65,7 +65,6 @@ export default function RoadmapClient({ user, userId, userProgress = [], roadmap
       await updateStepProgress(userId, chosenFieldId, stepId, "completed", submissionUrl);
     } catch (error) {
       console.error("Failed to update progress on server", error);
-      // Revert optimistic update if needed (left out for simplicity, matching DashboardClient pattern)
     } finally {
       setLoadingSteps((prev) => ({ ...prev, [stepId]: false }));
     }
@@ -85,27 +84,27 @@ export default function RoadmapClient({ user, userId, userProgress = [], roadmap
   const progressPercent = totalSteps > 0 ? Math.round((completedStepsCount / totalSteps) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 pb-20 selection:bg-indigo-100 selection:text-indigo-900 dark:selection:bg-indigo-900/30 dark:selection:text-indigo-200">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 pb-24 selection:bg-indigo-100 selection:text-indigo-900 dark:selection:bg-indigo-900/30 dark:selection:text-indigo-200">
       {/* 1. Header with Progress Bar */}
-      <header className="sticky top-[64px] z-40 bg-zinc-50/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200/50 dark:border-zinc-800/50 pt-8 pb-6 shadow-sm">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between mb-4">
+      <header className="sticky top-[64px] z-40 bg-zinc-50/85 dark:bg-zinc-950/85 backdrop-blur-2xl border-b border-zinc-200/50 dark:border-zinc-800/50 pt-8 pb-6 shadow-sm">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <div className="flex items-center justify-between mb-5">
             <div>
-              <Link href="/dashboard" className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 transition-colors mb-2 inline-block">
+              <Link href="/dashboard" className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 transition-colors mb-3 inline-block">
                 ← Back to Dashboard
               </Link>
-              <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white flex items-center gap-3">
-                <span className="text-4xl" aria-hidden="true">{field.emoji}</span>
+              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-zinc-900 dark:text-white flex items-center gap-4">
+                <span className="text-4xl sm:text-5xl" aria-hidden="true">{field.emoji}</span>
                 {field.name} Roadmap
               </h1>
             </div>
-            <div className="text-right">
-              <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Progress</span>
-              <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{progressPercent}%</div>
+            <div className="text-right bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl px-5 py-3 shadow-sm">
+              <span className="text-sm font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block mb-1">Progress</span>
+              <div className="text-3xl font-black text-indigo-600 dark:text-indigo-400 leading-none">{progressPercent}%</div>
             </div>
           </div>
           
-          <div className="h-2 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden relative">
+          <div className="h-3 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden relative shadow-inner">
             <div
               className="absolute left-0 top-0 h-full bg-indigo-600 dark:bg-indigo-500 rounded-full transition-all duration-1000 ease-out"
               style={{ width: `${progressPercent}%` }}
@@ -114,10 +113,8 @@ export default function RoadmapClient({ user, userId, userProgress = [], roadmap
         </div>
       </header>
 
-      {/* 2. Roadmap Steps */}
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 mt-10 space-y-8 relative">
-        <div className="absolute left-9 sm:left-11 top-0 bottom-0 w-0.5 bg-zinc-200 dark:bg-zinc-800 hidden sm:block"></div>
-        
+      {/* 2. Roadmap Steps - Full width single column, LMS style */}
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 mt-12 space-y-10">
         {field.roadmap?.map((stepItem, index) => {
           const stepId = stepItem.id || stepItem.name;
           const dbStep = roadmapSteps.find((s) => s.step_number === index + 1);
@@ -128,100 +125,114 @@ export default function RoadmapClient({ user, userId, userProgress = [], roadmap
           const submittedUrl = progressRow?.personal_note || "";
           
           // Determine status for UI
-          let statusText = "Not Started ⭕";
-          let statusColor = "text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800/50";
-          let stepMarkerColor = "border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-400 dark:text-zinc-600";
+          let statusText = "Not Started";
+          let statusColor = "text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800/80 border-zinc-200 dark:border-zinc-700";
+          let icon = "⭕";
           
           if (isCompleted) {
-            statusText = "Completed ✅";
-            statusColor = "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/30";
-            stepMarkerColor = "border-emerald-500 bg-emerald-500 text-white shadow-emerald-500/20";
+            statusText = "Completed";
+            statusColor = "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/50";
+            icon = "✅";
           } else if (index === completedStepsCount) {
-            statusText = "In Progress 🔵";
-            statusColor = "text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/30";
-            stepMarkerColor = "border-indigo-500 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 shadow-indigo-500/10";
+            statusText = "In Progress";
+            statusColor = "text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-900/50";
+            icon = "🔵";
           }
 
           const requiresSubmission = dbStep?.requires_submission || false;
 
           return (
-            <div key={stepId} className="relative z-10 flex gap-4 sm:gap-6 group">
-              
-              {/* Step Marker line connector */}
-              <div className="hidden sm:flex flex-col items-center mt-6">
-                <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center font-bold text-sm shadow-sm transition-colors duration-300 ${stepMarkerColor}`}>
-                  {isCompleted ? "✓" : index + 1}
-                </div>
-              </div>
-
-              {/* Step Card */}
-              <div className={`flex-1 rounded-2xl border p-6 transition-all duration-300 ${
+            <section 
+              key={stepId} 
+              className={`w-full min-h-[200px] rounded-[2rem] border p-6 sm:p-10 transition-all duration-500 ${
                 isCompleted 
-                  ? "bg-white/60 dark:bg-zinc-900/40 border-zinc-200/60 dark:border-zinc-800/60 opacity-75 hover:opacity-100" 
+                  ? "bg-white/50 dark:bg-zinc-900/30 border-zinc-200/50 dark:border-zinc-800/50" 
                   : index === completedStepsCount
-                    ? "bg-white dark:bg-zinc-900 border-indigo-200 dark:border-indigo-900/50 shadow-md shadow-indigo-900/5 ring-1 ring-indigo-50 dark:ring-indigo-900/20"
-                    : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm hover:shadow-md"
-              } ${isRecentlyCompleted ? "scale-[1.01] shadow-lg shadow-emerald-500/10 ring-2 ring-emerald-500 transition-transform" : ""}`}>
-                
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-5">
+                    ? "bg-white dark:bg-zinc-900 border-indigo-200 dark:border-indigo-900/60 shadow-xl shadow-indigo-900/5 ring-1 ring-indigo-50 dark:ring-indigo-900/20"
+                    : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-md"
+              } ${isRecentlyCompleted ? "scale-[1.02] shadow-2xl shadow-emerald-500/20 ring-4 ring-emerald-500 transition-transform" : ""}`}
+            >
+              
+              {/* Card Header */}
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 mb-8 border-b border-zinc-100 dark:border-zinc-800/60 pb-8">
+                <div className="flex items-center gap-5">
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-2xl shadow-sm ${
+                    isCompleted 
+                      ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-400" 
+                      : index === completedStepsCount
+                        ? "bg-indigo-600 text-white dark:bg-indigo-500"
+                        : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"
+                  }`}>
+                    {index + 1}
+                  </div>
                   <div>
-                    <div className="flex items-center gap-3 mb-1">
-                      <span className="sm:hidden text-xs font-bold text-zinc-400 dark:text-zinc-500">STEP {index + 1}</span>
-                      <h3 className="text-xl font-bold text-zinc-900 dark:text-white">
-                        {stepItem.name}
-                      </h3>
-                    </div>
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 dark:text-white leading-tight">
+                      {stepItem.name}
+                    </h2>
                     {stepItem.meta && (
-                      <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
-                        ⏱️ Estimated time: {stepItem.meta}
+                      <p className="text-base font-semibold text-zinc-500 dark:text-zinc-400 mt-1.5 flex items-center gap-2">
+                        <svg className="w-5 h-5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {stepItem.meta}
                       </p>
                     )}
                   </div>
-                  <div className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold self-start sm:self-auto ${statusColor}`}>
-                    {statusText}
-                  </div>
                 </div>
+                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold border ${statusColor}`}>
+                  <span>{icon}</span>
+                  {statusText}
+                </div>
+              </div>
 
+              <div className="space-y-8">
                 {/* DB Info: Resources */}
                 {dbStep?.resources && dbStep.resources.length > 0 && (
-                  <div className="mb-6">
-                    <h4 className="text-sm font-bold text-zinc-900 dark:text-white mb-3 uppercase tracking-wide">Resources</h4>
-                    <ul className="space-y-2">
+                  <div>
+                    <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
+                      <span className="text-xl">📚</span> Resources
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {dbStep.resources.map((res, i) => (
-                        <li key={i}>
-                          <a 
-                            href={res.url} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="inline-flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium bg-indigo-50 dark:bg-indigo-950/30 px-3 py-2 rounded-lg w-full transition-colors group-hover/res"
-                          >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <a 
+                          key={i}
+                          href={res.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-950 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 border border-zinc-200 dark:border-zinc-800 hover:border-indigo-200 dark:hover:border-indigo-800 p-4 rounded-xl transition-all group"
+                        >
+                          <div className="w-10 h-10 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center group-hover:border-indigo-300 dark:group-hover:border-indigo-700 transition-colors">
+                            <svg className="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                             </svg>
+                          </div>
+                          <span className="font-semibold text-zinc-700 dark:text-zinc-200 group-hover:text-indigo-700 dark:group-hover:text-indigo-300 transition-colors line-clamp-2">
                             {res.title}
-                          </a>
-                        </li>
+                          </span>
+                        </a>
                       ))}
-                    </ul>
+                    </div>
                   </div>
                 )}
 
-                {/* DB Info: Project Instructions */}
+                {/* DB Info: What to build */}
                 {dbStep?.project_instructions && (
-                  <div className="mb-6 bg-zinc-50 dark:bg-zinc-950/50 rounded-xl p-4 border border-zinc-200/80 dark:border-zinc-800/80">
-                    <h4 className="text-sm font-bold text-zinc-900 dark:text-white mb-2">Project / Exercise</h4>
-                    <p className="text-sm text-zinc-600 dark:text-zinc-300 whitespace-pre-line leading-relaxed">
+                  <div className="bg-zinc-50 dark:bg-zinc-950/50 rounded-2xl p-6 sm:p-8 border border-zinc-200/80 dark:border-zinc-800/80">
+                    <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
+                      <span className="text-xl">🛠️</span> What to build
+                    </h3>
+                    <div className="text-base text-zinc-700 dark:text-zinc-300 whitespace-pre-line leading-relaxed prose dark:prose-invert max-w-none">
                       {dbStep.project_instructions}
-                    </p>
+                    </div>
                   </div>
                 )}
 
                 {/* Submission & Action */}
                 {!isCompleted && (
-                  <div className="mt-6 pt-6 border-t border-zinc-100 dark:border-zinc-800/80">
+                  <div className="pt-6 mt-6 border-t border-zinc-100 dark:border-zinc-800/60">
                     {requiresSubmission && (
-                      <div className="mb-4">
-                        <label htmlFor={`github-${stepId}`} className="block text-sm font-bold text-zinc-900 dark:text-zinc-200 mb-2">
+                      <div className="mb-6">
+                        <label htmlFor={`github-${stepId}`} className="block text-base font-bold text-zinc-900 dark:text-zinc-100 mb-3">
                           GitHub / Project URL <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -230,7 +241,7 @@ export default function RoadmapClient({ user, userId, userProgress = [], roadmap
                           placeholder="https://github.com/your-username/repo"
                           value={submissionUrls[stepId] || ""}
                           onChange={(e) => handleUrlChange(stepId, e.target.value)}
-                          className="w-full rounded-lg bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 px-4 py-2.5 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-shadow"
+                          className="w-full rounded-xl bg-white dark:bg-zinc-950 border-2 border-zinc-200 dark:border-zinc-800 px-5 py-4 text-base text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-500 transition-colors"
                         />
                       </div>
                     )}
@@ -238,19 +249,19 @@ export default function RoadmapClient({ user, userId, userProgress = [], roadmap
                     <button
                       onClick={() => handleMarkComplete(stepId, requiresSubmission)}
                       disabled={loadingSteps[stepId]}
-                      className="w-full sm:w-auto inline-flex justify-center items-center gap-2 rounded-xl bg-zinc-900 dark:bg-white px-6 py-3 text-sm font-bold text-white dark:text-zinc-900 shadow-sm hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-zinc-900 dark:focus:ring-white dark:focus:ring-offset-zinc-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full sm:w-auto inline-flex justify-center items-center gap-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 px-8 py-4 text-base font-bold text-white shadow-lg shadow-emerald-600/20 transition-all focus:ring-4 focus:ring-emerald-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {loadingSteps[stepId] ? (
                         <>
-                          <div className="w-4 h-4 border-2 border-white/30 dark:border-zinc-900/30 border-t-white dark:border-t-zinc-900 rounded-full animate-spin"></div>
+                          <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
                           Saving...
                         </>
                       ) : (
                         <>
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                           </svg>
-                          Mark as Complete
+                          Mark Complete
                         </>
                       )}
                     </button>
@@ -258,15 +269,18 @@ export default function RoadmapClient({ user, userId, userProgress = [], roadmap
                 )}
                 
                 {isCompleted && submittedUrl && (
-                  <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800/80">
-                    <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1">Your Submission:</p>
-                    <a href={submittedUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline break-all">
+                  <div className="pt-6 mt-6 border-t border-zinc-100 dark:border-zinc-800/60">
+                    <p className="text-sm font-bold text-zinc-500 dark:text-zinc-400 mb-2 uppercase tracking-wide">Your Submission</p>
+                    <a href={submittedUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-base font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 hover:underline break-all">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
                       {submittedUrl}
                     </a>
                   </div>
                 )}
               </div>
-            </div>
+            </section>
           );
         })}
       </main>

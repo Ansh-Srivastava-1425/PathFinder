@@ -4,12 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 import DashboardClient from "@/components/DashboardClient";
 
 export const metadata = {
-  title: "Dashboard — PathFinder",
+  title: "Dashboard — Dishant",
   description: "Your personalised engineering career path dashboard.",
   openGraph: {
-    title: "Dashboard — PathFinder",
+    title: "Dashboard — Dishant",
     description: "Your personalised engineering career path dashboard.",
-    siteName: "PathFinder",
+    siteName: "Dishant",
   },
 };
 

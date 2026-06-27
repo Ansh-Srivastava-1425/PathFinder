@@ -15,7 +15,7 @@ export async function POST(req) {
         messages: [
           {
             role: 'system',
-            content: systemPrompt || 'You are PathFinder AI, a career advisor for Indian engineering students. Answer concisely in 3-5 sentences. Focus on practical, India-specific advice including salary ranges in LPA, relevant companies hiring in India, and realistic timelines.'
+            content: systemPrompt || 'You are Dishant AI, a career advisor for Indian engineering students. Answer concisely in 3-5 sentences. Focus on practical, India-specific advice including salary ranges in LPA, relevant companies hiring in India, and realistic timelines.'
           },
           { role: 'user', content: question }
         ]

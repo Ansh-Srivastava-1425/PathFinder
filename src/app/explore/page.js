@@ -4,12 +4,12 @@ import PageHeader from "@/components/PageHeader";
 import ExploreClient from "@/components/ExploreClient";
 
 export const metadata = {
-  title: "Explore Fields - PathFinder",
+  title: "Explore Fields - Dishant",
   description: "Explore diverse domains, compare popular careers against hidden gems, and plan your journey.",
   openGraph: {
-    title: "Explore Fields - PathFinder",
+    title: "Explore Fields - Dishant",
     description: "Explore diverse domains, compare popular careers against hidden gems, and plan your journey.",
-    siteName: "PathFinder",
+    siteName: "Dishant",
   },
 };
 

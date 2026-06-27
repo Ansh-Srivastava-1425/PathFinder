@@ -3,8 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import AdminSidebar from '@/components/AdminSidebar'
 
 export const metadata = {
-  title: 'Admin — PathFinder',
-  description: 'PathFinder internal admin dashboard.',
+  title: 'Admin — Dishant',
+  description: 'Dishant internal admin dashboard.',
   robots: { index: false, follow: false },
 }
 

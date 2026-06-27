@@ -2,12 +2,12 @@ import Link from "next/link";
 import { signup, signInWithGoogle } from "@/actions/auth";
 
 export const metadata = {
-  title: "Sign up for PathFinder",
-  description: "Create a PathFinder account to start exploring tech fields and mentors.",
+  title: "Sign up for Dishant",
+  description: "Create a Dishant account to start exploring tech fields and mentors.",
   openGraph: {
-    title: "Sign up for PathFinder",
-    description: "Create a PathFinder account to start exploring tech fields and mentors.",
-    siteName: "PathFinder",
+    title: "Sign up for Dishant",
+    description: "Create a Dishant account to start exploring tech fields and mentors.",
+    siteName: "Dishant",
   },
 };
 
@@ -33,7 +33,7 @@ export default async function SignupPage({ searchParams }) {
               <circle cx="12" cy="12" r="10" />
               <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
             </svg>
-            <span>PathFinder</span>
+            <span>Dishant</span>
           </Link>
           <h2 className="mt-6 text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
             Create an account

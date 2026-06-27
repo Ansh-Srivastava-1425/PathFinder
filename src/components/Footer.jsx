@@ -65,7 +65,7 @@ export default function Footer() {
                 <circle cx="12" cy="12" r="10" />
                 <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
               </svg>
-              <span>PathFinder</span>
+              <span>Dishant</span>
             </Link>
             <p className="max-w-xs text-sm leading-6 text-zinc-650 dark:text-zinc-400">
               Navigate your tech career with absolute confidence. Personalized AI career roadmaps, peer insights, and verified mentor calls.
@@ -174,7 +174,7 @@ export default function Footer() {
         {/* Legal & Bottom bar */}
         <div className="mt-12 border-t border-zinc-100 dark:border-zinc-900 pt-8 md:flex md:items-center md:justify-between text-xs text-zinc-500 dark:text-zinc-450">
           <p className="md:order-1">
-            &copy; {currentYear} PathFinder. Built for modern tech developers and students.
+            &copy; {currentYear} Dishant. Built for modern tech developers and students.
           </p>
         </div>
 

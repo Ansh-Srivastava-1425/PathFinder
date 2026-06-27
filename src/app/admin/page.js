@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata = {
-  title: 'Overview — Admin | PathFinder',
+  title: 'Overview — Admin | Dishant',
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────

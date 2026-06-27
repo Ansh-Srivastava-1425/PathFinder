@@ -4,12 +4,12 @@ import PageHeader from '@/components/PageHeader'
 import Footer from '@/components/Footer'
 
 export const metadata = {
-  title: 'Mentors — PathFinder',
+  title: 'Mentors — Dishant',
   description: 'Book a 1-on-1 session with a verified industry mentor. Get guidance on your engineering career path, placements, and technical interviews.',
   openGraph: {
-    title: 'Mentors — PathFinder',
+    title: 'Mentors — Dishant',
     description: 'Connect with verified industry mentors working at top Indian tech companies.',
-    siteName: 'PathFinder',
+    siteName: 'Dishant',
   },
 }
 

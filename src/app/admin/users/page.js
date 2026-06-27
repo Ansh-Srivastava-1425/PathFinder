@@ -2,7 +2,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import UsersClient from '@/components/admin/UsersClient'
 
 export const metadata = {
-  title: 'Users — Admin | PathFinder',
+  title: 'Users — Admin | Dishant',
 }
 
 export default async function AdminUsersPage() {

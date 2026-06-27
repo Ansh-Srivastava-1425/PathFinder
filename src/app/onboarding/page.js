@@ -4,12 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 import OnboardingClient from "@/components/OnboardingClient";
 
 export const metadata = {
-  title: "Onboarding — PathFinder",
-  description: "Personalise your career path recommendations on PathFinder.",
+  title: "Onboarding — Dishant",
+  description: "Personalise your career path recommendations on Dishant.",
   openGraph: {
-    title: "Onboarding — PathFinder",
-    description: "Personalise your career path recommendations on PathFinder.",
-    siteName: "PathFinder",
+    title: "Onboarding — Dishant",
+    description: "Personalise your career path recommendations on Dishant.",
+    siteName: "Dishant",
   },
 };
 

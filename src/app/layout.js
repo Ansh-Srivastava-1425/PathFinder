@@ -13,12 +13,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "PathFinder — Find your field. Own your future.",
-  description: "PathFinder is an AI-powered career guidance platform for Indian students. Discover the right tech field, get a personalised roadmap, and never waste years going in the wrong direction.",
+  title: "Dishant — Find your field. Own your future.",
+  description: "Dishant is an AI-powered career guidance platform for Indian students. Discover the right tech field, get a personalised roadmap, and never waste years going in the wrong direction.",
   openGraph: {
-    title: "PathFinder — Find your field. Own your future.",
-    description: "PathFinder is an AI-powered career guidance platform for Indian students. Discover the right tech field, get a personalised roadmap, and never waste years going in the wrong direction.",
-    siteName: "PathFinder",
+    title: "Dishant — Find your field. Own your future.",
+    description: "Dishant is an AI-powered career guidance platform for Indian students. Discover the right tech field, get a personalised roadmap, and never waste years going in the wrong direction.",
+    siteName: "Dishant",
   },
 };
 

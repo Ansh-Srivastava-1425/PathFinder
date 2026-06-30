@@ -13,8 +13,9 @@ export default async function SettingsPage() {
 
   // 1. Get current authenticated user session
   const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser()
+    data: { session },
+  } = await supabase.auth.getSession()
+  const authUser = session?.user;
 
   if (!authUser) {
     redirect('/auth/login')

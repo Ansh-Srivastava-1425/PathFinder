@@ -19,8 +19,9 @@ export default async function RoadmapPage() {
   
   // Get current authenticated user session
   const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
+  const authUser = session?.user;
 
   // If not logged in, redirect to login page
   if (!authUser) {
@@ -49,10 +50,22 @@ export default async function RoadmapPage() {
   }
 
   // Fetch user's progress rows server-side
-  const { data: userProgress } = await supabase
+  const { data: userProgress, error: progressError } = await supabase
     .from('user_progress')
     .select('*')
     .eq('user_id', authUser.id);
+
+  if (progressError) {
+    console.error("[/roadmap] Error loading user progress:", progressError);
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-zinc-950 p-4">
+        <div className="text-red-500 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 p-6 rounded-2xl text-center max-w-sm">
+          <h2 className="font-bold text-lg mb-2">Error</h2>
+          <p className="text-sm opacity-90">Something went wrong loading your progress. Please refresh the page.</p>
+        </div>
+      </div>
+    );
+  }
 
   // Fetch all roadmap steps for the user's chosen field from DB
   let roadmapSteps = [];

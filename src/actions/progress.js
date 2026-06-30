@@ -19,7 +19,8 @@ export async function updateStepProgress(fieldSlug, stepId, status) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user;
   if (!user) return { success: false, error: 'Not authenticated' }
 
   const { error } = await supabase

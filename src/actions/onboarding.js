@@ -24,7 +24,8 @@ export async function saveOnboardingData(payload) {
   )
 
   // Server-side auth — cannot be spoofed by the client
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user;
   if (!user) {
     console.error('[saveOnboardingData] getUser returned no user — not authenticated')
     return { success: false, error: 'Not authenticated' }

@@ -18,8 +18,9 @@ export default async function DashboardPage() {
   
   // Get current authenticated user session
   const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
+  const authUser = session?.user;
 
   // If not logged in, redirect to login page
   if (!authUser) {
@@ -48,10 +49,22 @@ export default async function DashboardPage() {
   }
 
   // Fetch user's progress rows server-side so DashboardClient starts with real data
-  const { data: userProgress } = await supabase
+  const { data: userProgress, error: progressError } = await supabase
     .from('user_progress')
     .select('*')
     .eq('user_id', authUser.id);
+
+  if (progressError) {
+    console.error("[/dashboard] Error loading user progress:", progressError);
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-8 min-h-[50vh] bg-zinc-50 dark:bg-zinc-950">
+        <div className="bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 p-4 rounded-xl border border-red-200 dark:border-red-900/50 text-center max-w-md">
+          <p className="font-bold mb-1">Error Loading Progress</p>
+          <p className="text-sm opacity-90">Something went wrong loading your progress. Please refresh the page.</p>
+        </div>
+      </div>
+    );
+  }
 
   // Fetch all roadmap steps for the user's chosen field from DB
   let roadmapSteps = [];

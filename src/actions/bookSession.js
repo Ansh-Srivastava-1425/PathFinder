@@ -12,7 +12,8 @@ export async function bookSession(mentorId) {
   }
 
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user;
 
   // Allow unauthenticated bookings — just don't record user_id
   const { error } = await supabase

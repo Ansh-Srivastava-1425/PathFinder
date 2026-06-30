@@ -370,10 +370,126 @@ export const fieldsData = {
       }
     ],
     roadmap: [
-      { step: "Step 1", name: "C Language Mastery & Bitwise Operations", meta: "3 weeks • 1 Project", locked: false },
-      { step: "Step 2", name: "Microcontroller Peripherals (GPIO, ADC, Timers)", meta: "5 weeks • 2 Projects", locked: false },
-      { step: "Step 3", name: "Communication Protocols (SPI, I2C, UART)", meta: "5 weeks • 2 Projects", locked: false },
-      { step: "Step 4", name: "RTOS Concepts & Memory-Safe Coding", meta: "Locked Step", locked: true }
+      {
+        step: "Step 1",
+        name: "Microcontroller Fundamentals & GPIO",
+        meta: "1.5 weeks • 1 Project",
+        locked: false,
+        skills: ["Microcontroller Architecture", "GPIO Configuration", "Digital Read/Write", "C++ for Arduino"],
+        resources: [
+          { title: "Arduino Language Reference", url: "https://www.arduino.cc/reference/en/", type: "Docs" },
+          { title: "Search: Paul McWhorter Arduino Tutorial Series", url: "#", type: "YouTube" }
+        ],
+        project_instructions: "Build a smart pedestrian crossing light.\n\nDeliverables:\n- Hardware: 3 LEDs (Red, Yellow, Green) for cars, 2 LEDs (Red, Green) for pedestrians, and 1 push button.\n- Software logic: Default state is cars green, pedestrians red. When button is pressed, smoothly transition cars to yellow then red, and pedestrians to green.\n- Must implement hardware or software debouncing so the button press is reliable."
+      },
+      {
+        step: "Step 2",
+        name: "Analog I/O, PWM & Sensor Basics",
+        meta: "1.5 weeks • 1 Project",
+        locked: false,
+        skills: ["ADC (Analog to Digital)", "PWM (Pulse Width Modulation)", "Sensor Polling", "Motor Control Basics"],
+        resources: [
+          { title: "Search: DroneBot Workshop PWM and Motors", url: "#", type: "YouTube" },
+          { title: "Search: Random Nerd Tutorials Analog Inputs", url: "#", type: "Website" }
+        ],
+        project_instructions: "Build a temperature-responsive fan controller.\n\nDeliverables:\n- Read an analog value from a temperature sensor (e.g., TMP36 or a simple potentiometer if sensor is unavailable).\n- Map the analog value to a PWM duty cycle (0-255).\n- Output the PWM signal to control the brightness of an LED (simulating a fan speed).\n- Print the raw ADC value and corresponding PWM value to the Serial Monitor."
+      },
+      {
+        step: "Step 3",
+        name: "Communication Protocols (UART, I2C, SPI)",
+        meta: "2 weeks • 1 Project",
+        locked: false,
+        skills: ["UART / Serial", "I2C Protocol", "SPI Protocol", "Logic Level Shifting"],
+        resources: [
+          { title: "SparkFun I2C Tutorial", url: "https://learn.sparkfun.com/tutorials/i2c/all", type: "Docs" },
+          { title: "Search: Ben Eater Serial Communication", url: "#", type: "YouTube" }
+        ],
+        project_instructions: "Interface with an external I2C display and UART GPS/Bluetooth module.\n\nDeliverables:\n- Wire an I2C OLED display (e.g., SSD1306) and print \"System Ready\".\n- Connect a second microcontroller or a serial terminal via UART.\n- Send a text string from the UART terminal and display it on the I2C OLED screen.\n- Handle basic error checking (e.g., what happens if the I2C device is unplugged?)."
+      },
+      {
+        step: "Step 4",
+        name: "Introduction to ESP32 & Wireless Basics",
+        meta: "2 weeks • 1 Project",
+        locked: false,
+        skills: ["ESP32 Architecture", "Wi-Fi Station/AP Modes", "BLE Advertising", "HTTP GET/POST"],
+        resources: [
+          { title: "ESP-IDF Programming Guide", url: "https://docs.espressif.com/projects/esp-idf/en/latest/esp32/", type: "Docs" },
+          { title: "Search: Random Nerd Tutorials ESP32 Web Server", url: "#", type: "Website" }
+        ],
+        project_instructions: "Create a local Wi-Fi smart switch.\n\nDeliverables:\n- Configure the ESP32 to connect to your local Wi-Fi network.\n- Host a simple asynchronous web server on the ESP32.\n- Serve an HTML page with a toggle button.\n- Clicking the button on your phone/PC should toggle a physical LED connected to the ESP32 GPIO."
+      },
+      {
+        step: "Step 5",
+        name: "Embedded C Fundamentals & Memory",
+        meta: "2 weeks • 1 Project",
+        locked: false,
+        skills: ["Pointers & Memory Addresses", "Bitwise Operations", "Volatile Keyword", "Register-Level Programming"],
+        resources: [
+          { title: "Search: FastBit Embedded Brain Academy C Programming", url: "#", type: "Course" },
+          { title: "Search: Jacob Sorber Pointers in C", url: "#", type: "YouTube" }
+        ],
+        project_instructions: "Rewrite a basic GPIO blink program without using Arduino libraries (Bare-Metal C).\n\nDeliverables:\n- Identify the memory address of the GPIO toggle register from the microcontroller datasheet.\n- Use pointers and bitwise operators (`|=`, `&= ~`, `^=`) to directly write to the hardware registers.\n- Use the `volatile` keyword correctly for hardware registers to prevent compiler optimization."
+      },
+      {
+        step: "Step 6",
+        name: "Hardware Interrupts & Timers",
+        meta: "1.5 weeks • 1 Project",
+        locked: false,
+        skills: ["Hardware Interrupts (ISR)", "Hardware Timers", "Watchdog Timer", "ISR Best Practices"],
+        resources: [
+          { title: "Search: GreatScott! Interrupts Explained", url: "#", type: "YouTube" },
+          { title: "AVR Microcontroller Datasheet (Interrupts Section)", url: "https://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-7810-Automotive-Microcontrollers-ATmega328P_Datasheet.pdf", type: "Docs" }
+        ],
+        project_instructions: "Build a non-blocking reaction timer game.\n\nDeliverables:\n- Configure a hardware timer to fire an interrupt every 1 millisecond to act as a system clock.\n- An LED turns on after a random delay.\n- User must press a button as fast as possible. The button must be tied to an External Hardware Interrupt (not polled in the main loop).\n- Output the reaction time in milliseconds to the Serial terminal."
+      },
+      {
+        step: "Step 7",
+        name: "RTOS Basics & Task Scheduling",
+        meta: "2.5 weeks • 1 Project",
+        locked: true,
+        skills: ["Task Creation", "Preemptive Scheduling", "Mutexes & Semaphores", "Inter-Task Communication"],
+        resources: [
+          { title: "FreeRTOS Official Documentation", url: "https://www.freertos.org/", type: "Docs" },
+          { title: "Search: DigiKey Intro to FreeRTOS", url: "#", type: "YouTube" }
+        ],
+        project_instructions: "Implement a multi-tasking sensor hub using FreeRTOS.\n\nDeliverables:\n- Create Task 1: Blinks a heartbeat LED every 500ms (High Priority).\n- Create Task 2: Reads an analog sensor every 2 seconds (Medium Priority).\n- Create Task 3: Prints the sensor data to Serial (Low Priority).\n- Use a RTOS Queue to safely pass the analog data from Task 2 to Task 3."
+      },
+      {
+        step: "Step 8",
+        name: "Writing Peripheral Device Drivers",
+        meta: "2 weeks • 1 Project",
+        locked: true,
+        skills: ["Peripheral Memory Mapping", "Driver Abstraction Layers", "Structs & Function Pointers", "I2C Register Reading"],
+        resources: [
+          { title: "Search: FastBit Embedded Bare Metal Drivers", url: "#", type: "Course" },
+          { title: "Search: Embedded Artistry Driver Design Patterns", url: "#", type: "Website" }
+        ],
+        project_instructions: "Write a custom C library/driver for an I2C sensor (e.g., MPU6050 accelerometer).\n\nDeliverables:\n- Do not use any third-party libraries for the sensor.\n- Write a `.c` and `.h` file defining your driver.\n- Implement initialization, read_raw_data, and sleep_mode functions.\n- Read the raw X, Y, Z acceleration data from the specific hardware registers defined in the sensor's datasheet."
+      },
+      {
+        step: "Step 9",
+        name: "Hardware Debugging & Analysis",
+        meta: "1.5 weeks • 1 Project",
+        locked: true,
+        skills: ["JTAG/SWD Interfaces", "Using a Logic Analyzer", "GDB for Embedded", "UART Debug Printing"],
+        resources: [
+          { title: "Search: Phil's Lab STM32 Debugging", url: "#", type: "YouTube" },
+          { title: "Saleae Logic Analyzer Support Docs", url: "https://support.saleae.com/", type: "Docs" }
+        ],
+        project_instructions: "Debug a faulty communication bus.\n\nDeliverables:\n- Introduce an intentional bug into an I2C or SPI communication script (e.g., wrong clock polarity or incorrect I2C address).\n- Use a Logic Analyzer (or a secondary microcontroller acting as one) to capture the waveform.\n- Document the captured waveform, highlighting exactly where the protocol fails (e.g., missing ACK bit)."
+      },
+      {
+        step: "Step 10",
+        name: "Capstone: Smart Environmental Monitor",
+        meta: "3 weeks • 1 Project",
+        locked: true,
+        skills: ["System Integration", "RTOS Architecture", "IoT Cloud Sync", "Power Optimization"],
+        resources: [
+          { title: "Search: Andreas Spiess Low Power ESP32", url: "#", type: "YouTube" },
+          { title: "ESP32 FreeRTOS Reference Manual", url: "https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/freertos.html", type: "Docs" }
+        ],
+        project_instructions: "Integrate everything into a robust, RTOS-driven IoT monitor.\n\nDeliverables:\n- Use an ESP32 running FreeRTOS.\n- Write your own custom driver to read I2C sensor data (Temp/Humidity).\n- Create tasks for reading sensors, updating a local OLED display, and syncing data to a local Wi-Fi server/dashboard.\n- Implement Deep Sleep mode: The device wakes up every 10 minutes, connects to Wi-Fi, syncs data, and goes back to sleep to save power."
+      }
     ]
   },
   "computational-biology": {

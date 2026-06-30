@@ -16,8 +16,7 @@ export default function RoadmapClient({ user, userId, userProgress = [], roadmap
   // State for Github submission URL inputs
   const [submissionUrls, setSubmissionUrls] = useState({});
   const [loadingSteps, setLoadingSteps] = useState({});
-  const [aiContent, setAiContent] = useState({});
-  const [aiLoading, setAiLoading] = useState({});
+  // Removed AI state
   
   // State for Accordion Toggle
   const [expandedStepId, setExpandedStepId] = useState(null);
@@ -26,38 +25,7 @@ export default function RoadmapClient({ user, userId, userProgress = [], roadmap
     setExpandedStepId((prev) => (prev === stepId ? null : stepId));
   };
 
-  const handleExpandAI = async (stepId, stepName) => {
-    if (aiContent[stepId] || aiLoading[stepId]) return;
-
-    setAiLoading((prev) => ({ ...prev, [stepId]: true }));
-
-    const systemPrompt = `You are a career roadmap expert for Indian engineering students. Give a detailed breakdown for the roadmap step: '${stepName}' in '${field.name}'. Return ONLY a JSON object with these fields: { "skills": ["skill1", "skill2"] (8-10 specific subtopics), "resources": [{"name": "resource name", "url": "url", "type": "YouTube/Website/Docs"}] (4-5 free resources), "project": "detailed project description to build", "tips": ["tip1", "tip2", "tip3"] (3 India-specific tips) }`;
-
-    try {
-      const res = await fetch("/api/advisor", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: "Return JSON data.", systemPrompt }),
-      });
-      const data = await res.json();
-      if (data.reply) {
-        let jsonString = data.reply.trim();
-        // Remove markdown backticks if present
-        if (jsonString.startsWith("\`\`\`json")) {
-          jsonString = jsonString.slice(7, -3).trim();
-        } else if (jsonString.startsWith("\`\`\`")) {
-          jsonString = jsonString.slice(3, -3).trim();
-        }
-        
-        const parsedData = JSON.parse(jsonString);
-        setAiContent((prev) => ({ ...prev, [stepId]: parsedData }));
-      }
-    } catch (error) {
-      console.error("Failed to fetch or parse AI content", error);
-    } finally {
-      setAiLoading((prev) => ({ ...prev, [stepId]: false }));
-    }
-  };
+  // Removed handleExpandAI
 
   const handleUrlChange = (stepId, value) => {
     setSubmissionUrls((prev) => ({ ...prev, [stepId]: value }));
@@ -245,137 +213,64 @@ export default function RoadmapClient({ user, userId, userProgress = [], roadmap
               {isExpanded && (
                 <div className="p-4 pt-5 space-y-6 animate-in slide-in-from-top-2 fade-in duration-200">
                   
-                  {/* AI Generation Trigger */}
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80">
-                    <div>
-                      <h3 className="text-sm font-semibold text-zinc-900 dark:text-white mb-0.5">Interactive Learning Guide</h3>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400">Expand this step with AI to get a structured breakdown of skills, resources, and projects.</p>
-                    </div>
-                    {!aiContent[stepId] && (
-                      <button
-                        onClick={() => handleExpandAI(stepId, stepItem.name)}
-                        disabled={aiLoading[stepId]}
-                        className="w-full sm:w-auto shrink-0 inline-flex justify-center items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors bg-indigo-50 dark:bg-indigo-950/60 px-3 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-900/50 shadow-sm disabled:opacity-70"
-                      >
-                        {aiLoading[stepId] ? (
-                          <>
-                            <div className="w-3 h-3 border-2 border-indigo-600/30 dark:border-indigo-400/30 border-t-indigo-600 dark:border-t-indigo-400 rounded-full animate-spin"></div>
-                            Analyzing...
-                          </>
-                        ) : (
-                          <>
-                            ✨ Expand with AI
-                          </>
-                        )}
-                      </button>
+                  {/* Direct Rendering of Static Content */}
+                  <div className="space-y-6">
+                    {/* Skills Grid */}
+                    {dbStep?.skills?.length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 mb-2 uppercase tracking-wider flex items-center gap-1.5">
+                          <span>🎯</span> Skills to Learn
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          {dbStep.skills.map((skill, i) => (
+                            <span key={i} className="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 text-indigo-700 dark:text-indigo-300 text-xs font-semibold rounded-lg shadow-sm">
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Resources List */}
+                    {dbStep?.resources?.length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 mb-2 uppercase tracking-wider flex items-center gap-1.5">
+                          <span>📚</span> Resources
+                        </h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {dbStep.resources.map((res, i) => {
+                            let typeIcon = "🌐";
+                            if (res.type?.toLowerCase().includes("youtube")) typeIcon = "📺";
+                            if (res.type?.toLowerCase().includes("docs") || res.type?.toLowerCase().includes("document")) typeIcon = "📄";
+                            
+                            return (
+                              <a key={i} href={res.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 bg-white dark:bg-zinc-950 hover:bg-zinc-50 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-2.5 rounded-lg transition-all group shadow-sm">
+                                <div className="w-8 h-8 rounded-md bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-sm shrink-0 group-hover:scale-110 transition-transform">
+                                  {typeIcon}
+                                </div>
+                                <div className="flex flex-col overflow-hidden">
+                                  <span className="font-semibold text-xs text-zinc-900 dark:text-zinc-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 truncate">{res.title || res.name}</span>
+                                  <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400">{res.type}</span>
+                                </div>
+                              </a>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Project Box */}
+                    {dbStep?.project_instructions && (
+                      <div className="bg-gradient-to-br from-indigo-50/80 to-zinc-50 dark:from-indigo-950/20 dark:to-zinc-900/50 p-4 sm:p-5 rounded-xl border border-indigo-100 dark:border-indigo-900/30">
+                        <h4 className="text-sm font-bold text-indigo-900 dark:text-indigo-300 mb-2 flex items-center gap-1.5">
+                          <span>🛠️</span> Project to Build
+                        </h4>
+                        <div className="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-line leading-relaxed">
+                          {dbStep.project_instructions}
+                        </div>
+                      </div>
                     )}
                   </div>
-
-                  {/* The AI Content JSON Rendering */}
-                  {aiContent[stepId] ? (
-                    <div className="space-y-6">
-                      
-                      {/* Skills Grid */}
-                      {aiContent[stepId].skills?.length > 0 && (
-                        <div>
-                          <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 mb-2 uppercase tracking-wider flex items-center gap-1.5">
-                            <span>🎯</span> Skills to Learn
-                          </h4>
-                          <div className="flex flex-wrap gap-2">
-                            {aiContent[stepId].skills.map((skill, i) => (
-                              <span key={i} className="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 text-indigo-700 dark:text-indigo-300 text-xs font-semibold rounded-lg shadow-sm">
-                                {skill}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Resources List */}
-                      {aiContent[stepId].resources?.length > 0 && (
-                        <div>
-                          <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 mb-2 uppercase tracking-wider flex items-center gap-1.5">
-                            <span>📚</span> Resources
-                          </h4>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {aiContent[stepId].resources.map((res, i) => {
-                              let typeIcon = "🌐";
-                              if (res.type?.toLowerCase().includes("youtube")) typeIcon = "📺";
-                              if (res.type?.toLowerCase().includes("docs") || res.type?.toLowerCase().includes("document")) typeIcon = "📄";
-                              
-                              return (
-                                <a key={i} href={res.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 bg-white dark:bg-zinc-950 hover:bg-zinc-50 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-2.5 rounded-lg transition-all group shadow-sm">
-                                  <div className="w-8 h-8 rounded-md bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-sm shrink-0 group-hover:scale-110 transition-transform">
-                                    {typeIcon}
-                                  </div>
-                                  <div className="flex flex-col overflow-hidden">
-                                    <span className="font-semibold text-xs text-zinc-900 dark:text-zinc-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 truncate">{res.name}</span>
-                                    <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400">{res.type}</span>
-                                  </div>
-                                </a>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Project Box */}
-                      {aiContent[stepId].project && (
-                        <div className="bg-gradient-to-br from-indigo-50/80 to-zinc-50 dark:from-indigo-950/20 dark:to-zinc-900/50 p-4 sm:p-5 rounded-xl border border-indigo-100 dark:border-indigo-900/30">
-                          <h4 className="text-sm font-bold text-indigo-900 dark:text-indigo-300 mb-2 flex items-center gap-1.5">
-                            <span>🛠️</span> Project to Build
-                          </h4>
-                          <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
-                            {aiContent[stepId].project}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Tips List */}
-                      {aiContent[stepId].tips?.length > 0 && (
-                        <div>
-                          <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 mb-3 uppercase tracking-wider flex items-center gap-1.5">
-                            <span>💡</span> Pro Tips for India
-                          </h4>
-                          <div className="space-y-2">
-                            {aiContent[stepId].tips.map((tip, i) => (
-                              <div key={i} className="flex items-start gap-3 text-sm text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-950 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-sm">
-                                <div className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
-                                  {i + 1}
-                                </div>
-                                <span className="leading-relaxed text-xs sm:text-sm">{tip}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                    </div>
-                  ) : (
-                    /* Fallback DB Content if AI not expanded yet (show existing project/resources if any) */
-                    <div className="space-y-6 opacity-75">
-                      {dbStep?.resources && dbStep.resources.length > 0 && (
-                        <div>
-                          <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 mb-2 uppercase tracking-wider">📚 Included Resources</h3>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                            {dbStep.resources.map((res, i) => (
-                              <a key={i} href={res.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 p-2.5 rounded-md">
-                                <span className="font-medium text-xs text-zinc-700 dark:text-zinc-300 line-clamp-1">{res.title}</span>
-                              </a>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {dbStep?.project_instructions && (
-                        <div>
-                          <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 mb-2 uppercase tracking-wider">🛠️ Overview</h3>
-                          <div className="text-xs text-zinc-600 dark:text-zinc-400 whitespace-pre-line leading-relaxed">
-                            {dbStep.project_instructions}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
 
                   {/* Submission & Action */}
                   <div className="pt-5 mt-5 border-t border-zinc-100 dark:border-zinc-800/60">
